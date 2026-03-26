@@ -129,7 +129,11 @@ font-weight:600;
 const chat = document.getElementById("chat")
 const input = document.getElementById("input")
 
-let messages = []
+let messages = JSON.parse(localStorage.getItem("chat_history")) || []
+
+function saveHistory(){
+  localStorage.setItem("chat_history", JSON.stringify(messages))
+}
 
 function addMessage(role,text){
 
@@ -144,6 +148,22 @@ chat.scrollTop=chat.scrollHeight
 return div
 }
 
+function loadHistory(){
+
+messages.forEach(msg=>{
+
+if(msg.role==="user"){
+addMessage("user",msg.content)
+}
+
+if(msg.role==="assistant"){
+addMessage("assistant",msg.content)
+}
+
+})
+
+}
+
 async function send(){
 
 const message=input.value.trim()
@@ -155,6 +175,8 @@ messages.push({
 role:"user",
 content:message
 })
+
+saveHistory()
 
 input.value=""
 
@@ -175,8 +197,6 @@ messages:messages
 
 const data=await res.json()
 
-console.log("API RESPONSE:",data)
-
 if(!data.text){
 
 loading.innerHTML=data.error || "AI service unavailable."
@@ -195,9 +215,9 @@ role:"assistant",
 content:data.text
 })
 
-}catch(err){
+saveHistory()
 
-console.error(err)
+}catch(err){
 
 loading.innerHTML="Connection error."
 loading.classList.remove("loading")
@@ -209,6 +229,8 @@ loading.classList.remove("loading")
 input.addEventListener("keydown",e=>{
 if(e.key==="Enter") send()
 })
+
+loadHistory()
 
 </script>
 
