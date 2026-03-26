@@ -2,527 +2,203 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0d0d14">
-<meta name="description" content="Your personal AI assistant">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Chat</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
-  :root {
-    --bg: #0d0d14;
-    --surface: #13131d;
-    --surface2: #1a1a27;
-    --surface3: #222233;
-    --border: rgba(255,255,255,0.06);
-    --border2: rgba(255,255,255,0.1);
-    --accent: #e8956d;
-    --accent2: #d4784e;
-    --accent-glow: rgba(232,149,109,0.12);
-    --text: #ede9e3;
-    --text2: #9e9a94;
-    --text3: #5a5752;
-    --user-bg: #172030;
-    --user-border: rgba(90,150,220,0.15);
-    --ai-bg: #14141f;
-    --safe-b: env(safe-area-inset-bottom, 0px);
-    --safe-t: env(safe-area-inset-top, 0px);
-  }
+body{
+font-family:system-ui,-apple-system,Segoe UI,Roboto;
+margin:0;
+background:#0b0f1a;
+color:white;
+display:flex;
+flex-direction:column;
+height:100vh;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+header{
+display:flex;
+align-items:center;
+padding:16px;
+border-bottom:1px solid #1f2937;
+}
 
-  html, body {
-    height: 100%; background: var(--bg);
-    color: var(--text); overflow: hidden;
-    font-family: 'DM Sans', -apple-system, sans-serif;
-  }
+.logo{
+width:40px;
+height:40px;
+background:#ff8a3d;
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
 
-  #app {
-    display: flex; flex-direction: column;
-    height: 100dvh; max-width: 520px; margin: 0 auto;
-    position: relative;
-  }
+.title{
+margin-left:12px;
+font-size:18px;
+font-weight:600;
+}
 
-  /* Subtle noise texture */
-  #app::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 0; opacity: 0.4;
-  }
+.status{
+margin-left:8px;
+width:8px;
+height:8px;
+background:#22c55e;
+border-radius:50%;
+}
 
-  /* ── HEADER ── */
-  #header {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding: calc(14px + var(--safe-t)) 18px 14px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0; z-index: 10; position: relative;
-  }
+#chat{
+flex:1;
+overflow:auto;
+padding:20px;
+display:flex;
+flex-direction:column;
+gap:16px;
+}
 
-  .hlogo {
-    width: 34px; height: 34px;
-    background: linear-gradient(145deg, #e8956d, #c4623a);
-    border-radius: 11px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px;
-    box-shadow: 0 3px 16px rgba(232,149,109,0.35);
-  }
+.message{
+max-width:75%;
+padding:12px 16px;
+border-radius:16px;
+line-height:1.5;
+}
 
-  .htitle {
-    font-family: 'DM Serif Display', Georgia, serif;
-    font-size: 18px; letter-spacing: -0.01em;
-    color: var(--text);
-  }
+.user{
+align-self:flex-end;
+background:#1e293b;
+}
 
-  .hsubtitle {
-    font-size: 11px; color: var(--text3);
-    margin-top: 1px; font-weight: 400;
-  }
+.bot{
+align-self:flex-start;
+background:#111827;
+border:1px solid #1f2937;
+}
 
-  .hleft { display: flex; align-items: center; gap: 11px; }
+.loading{
+opacity:.6;
+font-style:italic;
+}
 
-  .hright { display: flex; gap: 7px; }
+footer{
+display:flex;
+padding:12px;
+border-top:1px solid #1f2937;
+}
 
-  .hbtn {
-    width: 36px; height: 36px; border-radius: 10px;
-    border: 1px solid var(--border2);
-    background: var(--surface2); color: var(--text2);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 15px; transition: all 0.15s;
-  }
-  .hbtn:active { transform: scale(0.92); background: var(--surface3); }
+input{
+flex:1;
+background:#111827;
+border:1px solid #374151;
+color:white;
+padding:12px;
+border-radius:10px;
+outline:none;
+}
 
-  /* Status dot */
-  .status-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #5cb87a; flex-shrink: 0;
-    box-shadow: 0 0 6px rgba(92,184,122,0.5);
-    animation: statusPulse 2.5s ease-in-out infinite;
-  }
-  @keyframes statusPulse {
-    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
-  }
-  .status-dot.error { background: #e07070; box-shadow: 0 0 6px rgba(224,112,112,0.5); animation: none; }
-  .status-dot.thinking { background: var(--accent); box-shadow: 0 0 6px rgba(232,149,109,0.5); }
-
-  /* ── CHAT ── */
-  #chat {
-    flex: 1; overflow-y: auto; padding: 22px 14px;
-    display: flex; flex-direction: column; gap: 18px;
-    -webkit-overflow-scrolling: touch; position: relative; z-index: 1;
-  }
-  #chat::-webkit-scrollbar { width: 2px; }
-  #chat::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 1px; }
-
-  /* ── WELCOME ── */
-  #welcome {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 100%; text-align: center;
-    padding: 40px 24px; gap: 18px;
-  }
-
-  .wlogo {
-    width: 72px; height: 72px;
-    background: linear-gradient(145deg, #e8956d 0%, #c4623a 100%);
-    border-radius: 22px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px;
-    box-shadow: 0 8px 32px rgba(232,149,109,0.3), 0 2px 8px rgba(0,0,0,0.4);
-    animation: floatLogo 4s ease-in-out infinite;
-  }
-
-  @keyframes floatLogo {
-    0%,100% { transform: translateY(0); box-shadow: 0 8px 32px rgba(232,149,109,0.3); }
-    50% { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(232,149,109,0.4); }
-  }
-
-  .wtitle {
-    font-family: 'DM Serif Display', Georgia, serif;
-    font-size: 28px; letter-spacing: -0.02em;
-    line-height: 1.2;
-  }
-
-  .wtitle em { font-style: italic; color: var(--accent); }
-
-  .wsub {
-    font-size: 14px; color: var(--text2);
-    max-width: 260px; line-height: 1.6; font-weight: 300;
-  }
-
-  .wchips {
-    display: flex; flex-wrap: wrap;
-    gap: 8px; justify-content: center; margin-top: 6px;
-  }
-
-  .chip {
-    padding: 9px 16px;
-    background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 100px; font-size: 13px; font-weight: 400;
-    color: var(--text2); cursor: pointer; transition: all 0.18s;
-  }
-  .chip:active { background: var(--surface3); transform: scale(0.95); color: var(--text); }
-
-  /* ── MESSAGES ── */
-  .msg { display: flex; gap: 10px; animation: msgIn 0.28s cubic-bezier(0.34,1.2,0.64,1); }
-  .msg.user { flex-direction: row-reverse; }
-
-  @keyframes msgIn {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  .av {
-    width: 30px; height: 30px; border-radius: 9px;
-    flex-shrink: 0; display: flex;
-    align-items: center; justify-content: center;
-    margin-top: 3px; font-size: 13px;
-  }
-  .av.ai { background: linear-gradient(145deg, #e8956d, #c4623a); box-shadow: 0 2px 10px rgba(232,149,109,0.3); }
-  .av.you { background: var(--surface3); border: 1px solid var(--border2); font-weight: 700; font-size: 11px; color: var(--text2); }
-
-  .bubble {
-    max-width: calc(100% - 48px);
-    padding: 12px 15px; border-radius: 18px;
-    font-size: 15px; line-height: 1.7;
-  }
-
-  .msg.ai .bubble {
-    background: var(--ai-bg); border: 1px solid var(--border);
-    border-bottom-left-radius: 5px;
-    font-family: 'DM Serif Display', Georgia, serif;
-    font-size: 15px;
-  }
-
-  .msg.user .bubble {
-    background: var(--user-bg); border: 1px solid var(--user-border);
-    border-bottom-right-radius: 5px;
-    font-size: 15px;
-  }
-
-  .bubble code {
-    background: rgba(255,255,255,0.07); padding: 2px 7px;
-    border-radius: 5px; font-family: 'Courier New', monospace;
-    font-size: 13px;
-  }
-  .bubble pre {
-    background: rgba(0,0,0,0.35); border: 1px solid var(--border);
-    border-radius: 10px; padding: 13px; overflow-x: auto;
-    margin: 10px 0; font-family: 'Courier New', monospace; font-size: 13px;
-  }
-  .bubble pre code { background: none; padding: 0; }
-  .bubble strong { color: var(--accent); font-weight: 500; }
-  .bubble p { margin-bottom: 9px; }
-  .bubble p:last-child { margin-bottom: 0; }
-  .bubble ul, .bubble ol { padding-left: 20px; margin: 7px 0; }
-  .bubble li { margin-bottom: 5px; }
-
-  /* Model tag */
-  .model-tag {
-    font-size: 10px; color: var(--text3);
-    font-family: 'DM Sans', sans-serif;
-    margin-top: 5px; margin-left: 40px;
-    letter-spacing: 0.02em;
-  }
-
-  /* Thinking */
-  .thinking-wrap { display: flex; gap: 10px; animation: msgIn 0.28s ease-out; }
-  .thinking {
-    display: flex; gap: 6px; padding: 14px 16px;
-    background: var(--ai-bg); border: 1px solid var(--border);
-    border-radius: 18px; border-bottom-left-radius: 5px;
-    align-items: center;
-  }
-  .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent); opacity: 0.5;
-    animation: dotBounce 1.3s infinite ease-in-out;
-  }
-  .dot:nth-child(2) { animation-delay: 0.16s; }
-  .dot:nth-child(3) { animation-delay: 0.32s; }
-  @keyframes dotBounce {
-    0%,80%,100% { transform: translateY(0); opacity: 0.3; }
-    40% { transform: translateY(-7px); opacity: 1; }
-  }
-
-  /* ── INPUT ── */
-  #input-area {
-    padding: 10px 12px;
-    padding-bottom: calc(10px + var(--safe-b));
-    background: var(--surface); border-top: 1px solid var(--border);
-    flex-shrink: 0; z-index: 10; position: relative;
-  }
-
-  .input-row {
-    display: flex; align-items: flex-end; gap: 8px;
-    background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 17px; padding: 9px 9px 9px 15px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .input-row:focus-within {
-    border-color: rgba(232,149,109,0.4);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-
-  #inp {
-    flex: 1; background: none; border: none; outline: none;
-    color: var(--text); font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 300; line-height: 1.5;
-    resize: none; max-height: 130px; min-height: 24px; padding: 0;
-  }
-  #inp::placeholder { color: var(--text3); }
-
-  #sendbtn {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: var(--accent); border: none; color: white;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0;
-    transition: all 0.15s; font-size: 17px; font-weight: 600;
-  }
-  #sendbtn:active { transform: scale(0.88); background: var(--accent2); }
-  #sendbtn:disabled { background: var(--surface3); color: var(--text3); cursor: default; transform: none; }
-
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 85px; left: 50%;
-    transform: translateX(-50%) translateY(16px);
-    background: var(--surface3); border: 1px solid var(--border2);
-    color: var(--text); padding: 9px 18px; border-radius: 100px;
-    font-size: 13px; opacity: 0; transition: all 0.22s;
-    pointer-events: none; white-space: nowrap; z-index: 999;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+button{
+margin-left:10px;
+background:#ff8a3d;
+border:none;
+padding:12px 16px;
+border-radius:10px;
+color:white;
+cursor:pointer;
+font-weight:600;
+}
 </style>
 </head>
+
 <body>
-<div id="app">
 
-  <div id="header">
-    <div class="hleft">
-      <div class="hlogo">✦</div>
-      <div>
-        <div class="htitle">AI Chat</div>
-        <div class="hsubtitle" id="subtitle">Ready</div>
-      </div>
-      <div class="status-dot" id="statusdot"></div>
-    </div>
-    <div class="hright">
-      <div class="hbtn" onclick="newChat()" title="New chat">✎</div>
-    </div>
-  </div>
+<header>
+<div class="logo">✦</div>
+<div class="title">AI Chat</div>
+<div class="status"></div>
+</header>
 
-  <div id="chat">
-    <div id="welcome">
-      <div class="wlogo">✦</div>
-      <div class="wtitle">Hello, <em>friend</em></div>
-      <div class="wsub">Your AI is ready. Ask me anything — I'm powered by Gemini and always free.</div>
-      <div class="wchips">
-        <div class="chip" onclick="q('Explain quantum computing simply')">Explain quantum computing</div>
-        <div class="chip" onclick="q('Write me a motivational message')">Motivate me</div>
-        <div class="chip" onclick="q('Give me a business idea for 2026')">Business idea</div>
-        <div class="chip" onclick="q('Help me fix my code')">Fix my code</div>
-        <div class="chip" onclick="q('What should I learn in AI right now?')">Learn AI</div>
-        <div class="chip" onclick="q('Write a cold email for my project')">Cold email</div>
-      </div>
-    </div>
-  </div>
+<div id="chat"></div>
 
-  <div id="input-area">
-    <div class="input-row">
-      <textarea id="inp" placeholder="Ask anything…" rows="1"
-        onkeydown="onKey(event)" oninput="resize(this)"></textarea>
-      <button id="sendbtn" onclick="send()">↑</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
+<footer>
+<input id="input" placeholder="Ask something..." />
+<button onclick="send()">Send</button>
+</footer>
 
 <script>
-let history = [];
-let busy = false;
 
-// ── Replace with your actual Vercel URL after deploy ──
-const API_URL = '/api/chat';
+const chat=document.getElementById("chat")
+const input=document.getElementById("input")
 
-function q(text) {
-  document.getElementById('inp').value = text;
-  send();
+function addMessage(role,text){
+
+const div=document.createElement("div")
+div.className="message "+(role==="user"?"user":"bot")
+
+div.innerHTML=text
+chat.appendChild(div)
+
+chat.scrollTop=chat.scrollHeight
+
+return div
 }
 
-function onKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+async function send(){
+
+const message=input.value.trim()
+if(!message) return
+
+addMessage("user",message)
+input.value=""
+
+const loading=addMessage("assistant","AI is thinking...")
+loading.classList.add("loading")
+
+try{
+
+const res=await fetch("/api/chat",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+messages:[{role:"user",content:message}]
+})
+})
+
+const data=await res.json()
+
+console.log("API RESPONSE:",data)
+
+if(!data.text){
+
+loading.innerHTML=data.error || "AI service unavailable."
+loading.classList.remove("loading")
+return
+
 }
 
-function resize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+let text=data.text || "No response"
+text=text.replace(/\n/g,"<br>")
+
+loading.innerHTML=text
+loading.classList.remove("loading")
+
+}catch(err){
+
+console.error(err)
+
+loading.innerHTML="Connection error. Please try again."
+loading.classList.remove("loading")
+
 }
 
-async function send() {
-  if (busy) return;
-  const inp = document.getElementById('inp');
-  const text = inp.value.trim();
-  if (!text) return;
-
-  hideWelcome();
-  inp.value = ''; inp.style.height = 'auto';
-
-  history.push({ role: 'user', content: text });
-  addBubble('user', text);
-  scrollDown();
-
-  busy = true;
-  document.getElementById('sendbtn').disabled = true;
-  setStatus('thinking');
-
-  const thinkEl = addThinking();
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history })
-    });
-
-    const data = await res.json();
-
-    thinkEl.remove();
-
-    if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-
-    history.push({ role: 'assistant', content: data.text });
-    addBubble('ai', data.text, data.model);
-    setStatus('ready');
-
-  } catch(err) {
-    thinkEl.remove();
-    const msg = err.message || 'Something went wrong';
-    addBubble('ai', `**Oops.** ${msg}`);
-    setStatus('error');
-    setTimeout(() => setStatus('ready'), 3000);
-  }
-
-  busy = false;
-  document.getElementById('sendbtn').disabled = false;
-  scrollDown();
 }
 
-function setStatus(s) {
-  const dot = document.getElementById('statusdot');
-  const sub = document.getElementById('subtitle');
-  dot.className = 'status-dot' + (s === 'thinking' ? ' thinking' : s === 'error' ? ' error' : '');
-  sub.textContent = s === 'thinking' ? 'Thinking…' : s === 'error' ? 'Error' : 'Ready';
-}
+input.addEventListener("keydown",e=>{
+if(e.key==="Enter") send()
+})
 
-function hideWelcome() {
-  const w = document.getElementById('welcome');
-  if (w) w.remove();
-}
-
-function addBubble(role, content, model) {
-  const chat = document.getElementById('chat');
-  const wrap = document.createElement('div');
-
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-
-  const av = document.createElement('div');
-  av.className = `av ${role}`;
-  av.textContent = role === 'user' ? 'You' : '✦';
-
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  bubble.innerHTML = md(content);
-
-  div.appendChild(av);
-  div.appendChild(bubble);
-  wrap.appendChild(div);
-
-  if (model && role === 'ai') {
-    const tag = document.createElement('div');
-    tag.className = 'model-tag';
-    tag.textContent = '↳ ' + model;
-    wrap.appendChild(tag);
-  }
-
-  chat.appendChild(wrap);
-}
-
-function addThinking() {
-  const chat = document.getElementById('chat');
-  const wrap = document.createElement('div');
-  wrap.className = 'thinking-wrap';
-  wrap.innerHTML = `
-    <div class="av ai">✦</div>
-    <div class="thinking">
-      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    </div>`;
-  chat.appendChild(wrap);
-  scrollDown();
-  return wrap;
-}
-
-function md(text) {
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_,c) => `<pre><code>${c.trim()}</code></pre>`)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-    .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
-    .split(/\n\n+/)
-    .map(p => {
-      p = p.trim(); if (!p) return '';
-      if (p.startsWith('<pre>')) return p;
-      const lines = p.split('\n');
-      if (lines.every(l => /^[\-\*\d]/.test(l.trim()))) {
-        return '<ul>' + lines.map(l => `<li>${l.replace(/^[\-\*]\s*/,'').replace(/^\d+\.\s*/,'')}</li>`).join('') + '</ul>';
-      }
-      return `<p>${p.replace(/\n/g,'<br>')}</p>`;
-    }).join('');
-}
-
-function scrollDown() {
-  const chat = document.getElementById('chat');
-  setTimeout(() => chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }), 40);
-}
-
-function newChat() {
-  history = [];
-  document.getElementById('chat').innerHTML = `
-    <div id="welcome">
-      <div class="wlogo">✦</div>
-      <div class="wtitle">Hello, <em>friend</em></div>
-      <div class="wsub">Your AI is ready. Ask me anything — powered by Gemini, always free.</div>
-      <div class="wchips">
-        <div class="chip" onclick="q('Explain quantum computing simply')">Explain quantum computing</div>
-        <div class="chip" onclick="q('Write me a motivational message')">Motivate me</div>
-        <div class="chip" onclick="q('Give me a business idea for 2026')">Business idea</div>
-        <div class="chip" onclick="q('Help me fix my code')">Fix my code</div>
-        <div class="chip" onclick="q('What should I learn in AI right now?')">Learn AI</div>
-        <div class="chip" onclick="q('Write a cold email for my project')">Cold email</div>
-      </div>
-    </div>`;
-  toast('New chat ✓');
-}
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
-}
-
-// Android keyboard fix
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
-    document.getElementById('app').style.height = window.visualViewport.height + 'px';
-  });
-}
 </script>
+
 </body>
 </html>
