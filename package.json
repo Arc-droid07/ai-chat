@@ -1,0 +1,9 @@
+{
+  "name": "ai-chat",
+  "version": "1.0.0",
+  "description": "Free AI Chat App",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
