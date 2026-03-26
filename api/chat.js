@@ -1,4 +1,4 @@
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const OR_KEY = process.env.OPENROUTER_API_KEY;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,27 +10,34 @@ export default async function handler(req, res) {
   const { messages } = req.body;
   if (!messages?.length) return res.status(400).json({ error: 'No messages' });
 
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
+  // Try 5 free models one by one until one works
+  const models = [
+    'google/gemini-2.0-flash-exp:free',
+    'deepseek/deepseek-r1:free',
+    'deepseek/deepseek-v3:free',
+    'qwen/qwen2.5-vl-72b-instruct:free',
+    'mistralai/mistral-7b-instruct:free'
+  ];
 
-  const res2 = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
-    }
-  );
+  for (const model of models) {
+    try {
+      const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OR_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://ai-chat-beige-alpha.vercel.app',
+          'X-Title': 'AI Chat'
+        },
+        body: JSON.stringify({ model, messages, max_tokens: 1024 })
+      });
 
-  const data = await res2.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data = await orRes.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (text) return res.json({ text, model: model.split('/')[1] });
 
-  if (text) return res.json({ text, model: 'Gemini 2.0 Flash' });
+    } catch(e) { continue; }
+  }
 
-  return res.status(503).json({ 
-    error: 'AI unavailable. Try again.',
-    debug: JSON.stringify(data).substring(0, 200)
-  });
+  return res.status(503).json({ error: 'All AI services temporarily unavailable. Try again in a few minutes.' });
 }
