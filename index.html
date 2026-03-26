@@ -126,8 +126,10 @@ font-weight:600;
 
 <script>
 
-const chat=document.getElementById("chat")
-const input=document.getElementById("input")
+const chat = document.getElementById("chat")
+const input = document.getElementById("input")
+
+let messages = []
 
 function addMessage(role,text){
 
@@ -148,6 +150,12 @@ const message=input.value.trim()
 if(!message) return
 
 addMessage("user",message)
+
+messages.push({
+role:"user",
+content:message
+})
+
 input.value=""
 
 const loading=addMessage("assistant","AI is thinking...")
@@ -161,7 +169,7 @@ headers:{
 "Content-Type":"application/json"
 },
 body:JSON.stringify({
-messages:[{role:"user",content:message}]
+messages:messages
 })
 })
 
@@ -177,17 +185,21 @@ return
 
 }
 
-let text=data.text || "No response"
-text=text.replace(/\n/g,"<br>")
+let text=data.text.replace(/\n/g,"<br>")
 
 loading.innerHTML=text
 loading.classList.remove("loading")
+
+messages.push({
+role:"assistant",
+content:data.text
+})
 
 }catch(err){
 
 console.error(err)
 
-loading.innerHTML="Connection error. Please try again."
+loading.innerHTML="Connection error."
 loading.classList.remove("loading")
 
 }
