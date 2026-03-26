@@ -27,7 +27,11 @@ export default async function handler(req, res) {
               role: "user",
               parts: [{ text: userMessage }]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1000
+          }
         })
       }
     );
@@ -36,16 +40,24 @@ export default async function handler(req, res) {
 
     console.log("FULL GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
-    // ✅ FIXED TEXT EXTRACTION
-    const text =
-      data?.candidates?.[0]?.content?.parts
-        ?.map(p => p.text)
-        ?.join("") || null;
+    // ✅ SAFE TEXT EXTRACTION
+    let text = null;
 
+    if (data?.candidates?.length > 0) {
+      const parts = data.candidates[0]?.content?.parts;
+
+      if (parts && parts.length > 0) {
+        text = parts
+          .map(p => p.text || "")
+          .join("")
+          .trim();
+      }
+    }
+
+    // 🔴 HANDLE EMPTY RESPONSE (IMPORTANT)
     if (!text) {
-      return res.status(500).json({
-        error: "AI returned empty response",
-        debug: data
+      return res.status(200).json({
+        text: "⚠️ AI returned empty. Try a different message."
       });
     }
 
