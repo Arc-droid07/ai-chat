@@ -1,84 +1,88 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Chat</title>
+</head>
+<body style="font-family: Arial; max-width:600px; margin:50px auto;">
 
-export default function Home() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  <h2>AI Chat</h2>
 
-  const sendMessage = async () => {
-    if (!input) return;
+  <div id="chat" style="border:1px solid #ccc; height:400px; overflow-y:auto; padding:10px;"></div>
 
-    const newMessages = [
-      ...messages,
-      { role: "user", content: input }
-    ];
+  <div style="margin-top:10px;">
+    <input id="input" style="width:80%; padding:10px;" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
-    setMessages(newMessages);
-    setInput("");
-    setLoading(true);
+  <script>
+    let messages = [];
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ messages: newMessages })
+    function addMessage(role, text) {
+      const chat = document.getElementById("chat");
+
+      const div = document.createElement("div");
+      div.style.textAlign = role === "user" ? "right" : "left";
+      div.style.margin = "10px 0";
+
+      const span = document.createElement("span");
+      span.style.padding = "8px 12px";
+      span.style.borderRadius = "10px";
+      span.style.background = role === "user" ? "#007bff" : "#eee";
+      span.style.color = role === "user" ? "#fff" : "#000";
+
+      span.innerText = text;
+      div.appendChild(span);
+      chat.appendChild(div);
+
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("input");
+      const text = input.value;
+
+      if (!text) return;
+
+      addMessage("user", text);
+      messages.push({ role: "user", content: text });
+
+      input.value = "";
+
+      addMessage("assistant", "Typing...");
+
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "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"
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-3.5-turbo",
+            messages
+          })
+        });
+
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "Error";
+
+        messages.push({ role: "assistant", content: reply });
+
+        // remove "Typing..."
+        const chat = document.getElementById("chat");
+        chat.lastChild.remove();
+
+        addMessage("assistant", reply);
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById("input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendMessage();
     });
+  </script>
 
-    const data = await res.json();
-
-    setMessages([
-      ...newMessages,
-      { role: "assistant", content: data.text || "Error" }
-    ]);
-
-    setLoading(false);
-  };
-
-  return (
-    <div style={{ maxWidth: 600, margin: "50px auto", fontFamily: "Arial" }}>
-      <h2>AI Chat</h2>
-
-      <div style={{
-        border: "1px solid #ccc",
-        padding: 10,
-        height: 400,
-        overflowY: "auto",
-        marginBottom: 10
-      }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{
-            textAlign: msg.role === "user" ? "right" : "left",
-            margin: "10px 0"
-          }}>
-            <span style={{
-              display: "inline-block",
-              padding: "8px 12px",
-              borderRadius: 10,
-              background: msg.role === "user" ? "#007bff" : "#eee",
-              color: msg.role === "user" ? "#fff" : "#000"
-            }}>
-              {msg.content}
-            </span>
-          </div>
-        ))}
-
-        {loading && <div>AI is typing...</div>}
-      </div>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <input
-          style={{ flex: 1, padding: 10 }}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && sendMessage()}
-          placeholder="Type a message..."
-        />
-
-        <button onClick={sendMessage} style={{ padding: "10px 20px" }}>
-          Send
-        </button>
-      </div>
-    </div>
-  );
-}
+</body>
+</html>
