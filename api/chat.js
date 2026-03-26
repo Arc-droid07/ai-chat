@@ -1,29 +1,33 @@
 export default async function handler(req, res) {
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const { messages } = req.body;
+    const userMessage = messages?.[messages.length - 1]?.content;
 
-    if (!messages || messages.length === 0) {
-      return res.status(400).json({ error: "No messages" });
+    if (!userMessage) {
+      return res.status(400).json({ error: "No user message" });
     }
 
-    // GEMINI (PRIMARY)
+    // -----------------------
+    // 1️⃣ GEMINI (PRIMARY)
+    // -----------------------
     try {
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: messages.map(m => ({
-              role: m.role,
-              parts: [{ text: m.content }]
-            }))
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: userMessage }]
+              }
+            ]
           })
         }
       );
@@ -34,14 +38,18 @@ export default async function handler(req, res) {
         data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (text) {
-        return res.status(200).json({ text });
+        return res.status(200).json({ text, provider: "gemini" });
       }
 
+      console.log("Gemini failed:", data);
+
     } catch (err) {
-      console.log("Gemini failed");
+      console.log("Gemini error:", err);
     }
 
-    // FALLBACK → OpenRouter
+    // -----------------------
+    // 2️⃣ OPENROUTER (FALLBACK)
+    // -----------------------
     try {
       const openRes = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -53,7 +61,7 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             model: "openai/gpt-3.5-turbo",
-            messages
+            messages: [{ role: "user", content: userMessage }]
           })
         }
       );
@@ -63,18 +71,24 @@ export default async function handler(req, res) {
       const text = data?.choices?.[0]?.message?.content;
 
       if (text) {
-        return res.status(200).json({ text });
+        return res.status(200).json({ text, provider: "openrouter" });
       }
 
+      console.log("OpenRouter failed:", data);
+
     } catch (err) {
-      console.log("OpenRouter failed");
+      console.log("OpenRouter error:", err);
     }
 
+    // -----------------------
+    // FINAL FAIL
+    // -----------------------
     return res.status(500).json({
-      error: "All providers failed"
+      error: "All AI providers failed"
     });
 
   } catch (err) {
-    return res.status(500).json({ error: "Server error" });
+    console.error("SERVER CRASH:", err);
+    return res.status(500).json({ error: "Server crash" });
   }
 }
