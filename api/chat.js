@@ -1,20 +1,18 @@
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).end();
   }
 
   try {
     const { messages } = req.body;
-    const userMessage = messages?.[messages.length - 1]?.content;
 
-    if (!userMessage) {
-      return res.status(400).json({ error: "No user message" });
+    if (!messages || messages.length === 0) {
+      return res.status(400).json({ error: "No messages" });
     }
 
-    // -----------------------
-    // 1️⃣ GEMINI (PRIMARY)
-    // -----------------------
+    // -------------------------
+    // 1️⃣ GEMINI (FAST + FREE)
+    // -------------------------
     try {
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -22,12 +20,10 @@ export default async function handler(req, res) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: userMessage }]
-              }
-            ]
+            contents: messages.map(m => ({
+              role: m.role,
+              parts: [{ text: m.content }]
+            }))
           })
         }
       );
@@ -38,7 +34,10 @@ export default async function handler(req, res) {
         data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (text) {
-        return res.status(200).json({ text, provider: "gemini" });
+        return res.status(200).json({
+          text,
+          provider: "gemini"
+        });
       }
 
       console.log("Gemini failed:", data);
@@ -47,48 +46,35 @@ export default async function handler(req, res) {
       console.log("Gemini error:", err);
     }
 
-    // -----------------------
-    // 2️⃣ OPENROUTER (FALLBACK)
-    // -----------------------
-    try {
-      const openRes = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo",
-            messages: [{ role: "user", content: userMessage }]
-          })
-        }
-      );
-
-      const data = await openRes.json();
-
-      const text = data?.choices?.[0]?.message?.content;
-
-      if (text) {
-        return res.status(200).json({ text, provider: "openrouter" });
+    // -------------------------
+    // 2️⃣ OPENROUTER (STREAMING)
+    // -------------------------
+    const openRes = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages,
+          stream: true
+        })
       }
+    );
 
-      console.log("OpenRouter failed:", data);
+    res.setHeader("Content-Type", "text/plain");
 
-    } catch (err) {
-      console.log("OpenRouter error:", err);
+    for await (const chunk of openRes.body) {
+      res.write(chunk);
     }
 
-    // -----------------------
-    // FINAL FAIL
-    // -----------------------
-    return res.status(500).json({
-      error: "All AI providers failed"
-    });
+    res.end();
 
   } catch (err) {
-    console.error("SERVER CRASH:", err);
-    return res.status(500).json({ error: "Server crash" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 }
