@@ -1,88 +1,204 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>AI Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chat</title>
+
+<style>
+body{
+font-family:system-ui,-apple-system,Segoe UI,Roboto;
+margin:0;
+background:#0b0f1a;
+color:white;
+display:flex;
+flex-direction:column;
+height:100vh;
+}
+
+header{
+display:flex;
+align-items:center;
+padding:16px;
+border-bottom:1px solid #1f2937;
+}
+
+.logo{
+width:40px;
+height:40px;
+background:#ff8a3d;
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
+
+.title{
+margin-left:12px;
+font-size:18px;
+font-weight:600;
+}
+
+.status{
+margin-left:8px;
+width:8px;
+height:8px;
+background:#22c55e;
+border-radius:50%;
+}
+
+#chat{
+flex:1;
+overflow:auto;
+padding:20px;
+display:flex;
+flex-direction:column;
+gap:16px;
+}
+
+.message{
+max-width:75%;
+padding:12px 16px;
+border-radius:16px;
+line-height:1.5;
+}
+
+.user{
+align-self:flex-end;
+background:#1e293b;
+}
+
+.bot{
+align-self:flex-start;
+background:#111827;
+border:1px solid #1f2937;
+}
+
+.loading{
+opacity:.6;
+font-style:italic;
+}
+
+footer{
+display:flex;
+padding:12px;
+border-top:1px solid #1f2937;
+}
+
+input{
+flex:1;
+background:#111827;
+border:1px solid #374151;
+color:white;
+padding:12px;
+border-radius:10px;
+outline:none;
+}
+
+button{
+margin-left:10px;
+background:#ff8a3d;
+border:none;
+padding:12px 16px;
+border-radius:10px;
+color:white;
+cursor:pointer;
+font-weight:600;
+}
+</style>
 </head>
-<body style="font-family: Arial; max-width:600px; margin:50px auto;">
 
-  <h2>AI Chat</h2>
+<body>
 
-  <div id="chat" style="border:1px solid #ccc; height:400px; overflow-y:auto; padding:10px;"></div>
+<header>
+<div class="logo">✦</div>
+<div class="title">AI Chat</div>
+<div class="status"></div>
+</header>
 
-  <div style="margin-top:10px;">
-    <input id="input" style="width:80%; padding:10px;" placeholder="Type a message..." />
-    <button onclick="sendMessage()">Send</button>
-  </div>
+<div id="chat"></div>
 
-  <script>
-    let messages = [];
+<footer>
+<input id="input" placeholder="Ask something..." />
+<button onclick="send()">Send</button>
+</footer>
 
-    function addMessage(role, text) {
-      const chat = document.getElementById("chat");
+<script>
 
-      const div = document.createElement("div");
-      div.style.textAlign = role === "user" ? "right" : "left";
-      div.style.margin = "10px 0";
+const chat=document.getElementById("chat")
+const input=document.getElementById("input")
 
-      const span = document.createElement("span");
-      span.style.padding = "8px 12px";
-      span.style.borderRadius = "10px";
-      span.style.background = role === "user" ? "#007bff" : "#eee";
-      span.style.color = role === "user" ? "#fff" : "#000";
+function addMessage(role,text){
 
-      span.innerText = text;
-      div.appendChild(span);
-      chat.appendChild(div);
+const div=document.createElement("div")
+div.className="message "+(role==="user"?"user":"bot")
 
-      chat.scrollTop = chat.scrollHeight;
-    }
+div.innerHTML=text
+chat.appendChild(div)
 
-    async function sendMessage() {
-      const input = document.getElementById("input");
-      const text = input.value;
+chat.scrollTop=chat.scrollHeight
 
-      if (!text) return;
+return div
+}
 
-      addMessage("user", text);
-      messages.push({ role: "user", content: text });
+async function send(){
 
-      input.value = "";
+const message=input.value.trim()
+if(!message) return
 
-      addMessage("assistant", "Typing...");
+addMessage("user",message)
+input.value=""
 
-      try {
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "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"
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo",
-            messages
-          })
-        });
+const loading=addMessage("assistant","AI is thinking...")
+loading.classList.add("loading")
 
-        const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content || "Error";
+try{
 
-        messages.push({ role: "assistant", content: reply });
+const res=await fetch("/api/chat",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+messages:[{role:"user",content:message}]
+})
+})
 
-        // remove "Typing..."
-        const chat = document.getElementById("chat");
-        chat.lastChild.remove();
+const data=await res.json()
 
-        addMessage("assistant", reply);
+console.log("API RESPONSE:",data)
 
-      } catch (err) {
-        console.error(err);
-      }
-    }
+if(!data.text){
 
-    document.getElementById("input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendMessage();
-    });
-  </script>
+loading.innerHTML=data.error || "AI service unavailable."
+loading.classList.remove("loading")
+return
+
+}
+
+let text=data.text || "No response"
+text=text.replace(/\n/g,"<br>")
+
+loading.innerHTML=text
+loading.classList.remove("loading")
+
+}catch(err){
+
+console.error(err)
+
+loading.innerHTML="Connection error. Please try again."
+loading.classList.remove("loading")
+
+}
+
+}
+
+input.addEventListener("keydown",e=>{
+if(e.key==="Enter") send()
+})
+
+</script>
 
 </body>
 </html>
