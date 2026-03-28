@@ -9,12 +9,22 @@ export default async function handler(req, res) {
     if (!messages?.length) return res.status(400).json({ error: 'No messages' });
     const lastUserMsg = messages[messages.length - 1].content;
 
-    // Skip AI for image generation — handled by frontend
+   // Image generation — proxy through backend to avoid CORS
     const IMG_CHECK = /generate|create|draw|make|show me|image of|picture of|paint|illustrate/i;
     if (IMG_CHECK.test(lastUserMsg)) {
-      return res.status(200).json({ text: '__IMAGE__' });
+      const clean = lastUserMsg.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|hey aki|aki|please|can you|for me/gi, '').trim();
+      const seed = Math.floor(Math.random() * 999999);
+      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${seed}&model=flux`;
+      
+      // Fetch image on server side to verify it works
+      try {
+        const imgCheck = await fetch(imgUrl);
+        if (imgCheck.ok) {
+          return res.status(200).json({ text: '🎨 Here you go!', image: imgUrl });
+        }
+      } catch(e) {}
+      return res.status(200).json({ text: '❌ Image generation failed. Try again!' });
     }
-
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
