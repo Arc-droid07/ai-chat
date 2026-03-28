@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d0d14">
-<title>AI Chat</title>
+<title>Aki AI</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
   :root {
     --bg: #0d0d14;
@@ -27,10 +29,8 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; font-family: 'DM Sans', sans-serif; }
 
-  /* ── LAYOUT ── */
   #layout { display: flex; height: 100dvh; }
 
-  /* ── SIDEBAR ── */
   #sidebar {
     width: var(--sidebar-w);
     background: var(--surface);
@@ -48,25 +48,18 @@
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
   }
-
-  .sidebar-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 17px; color: var(--text);
-  }
+  .sidebar-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text); }
 
   .new-chat-btn {
     display: flex; align-items: center; gap: 8px;
     margin: 12px; padding: 10px 14px;
     background: var(--accent); border: none; border-radius: 12px;
     color: white; font-family: 'DM Sans', sans-serif;
-    font-size: 14px; font-weight: 500; cursor: pointer;
-    transition: all 0.15s;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s;
   }
   .new-chat-btn:active { background: var(--accent2); transform: scale(0.97); }
 
-  #chat-list {
-    flex: 1; overflow-y: auto; padding: 8px;
-  }
+  #chat-list { flex: 1; overflow-y: auto; padding: 8px; }
   #chat-list::-webkit-scrollbar { width: 2px; }
   #chat-list::-webkit-scrollbar-thumb { background: var(--surface3); }
 
@@ -74,14 +67,11 @@
     padding: 10px 12px; border-radius: 10px;
     cursor: pointer; transition: all 0.15s;
     font-size: 13px; color: var(--text2);
-    white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
   .chat-item:hover, .chat-item.active { background: var(--surface2); color: var(--text); }
   .chat-item.active { border-left: 2px solid var(--accent); padding-left: 10px; }
-
   .chat-item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .delete-btn {
@@ -94,35 +84,27 @@
   .chat-item:hover .delete-btn { opacity: 1; }
   .delete-btn:hover { color: #e07070; background: rgba(220,80,80,0.1); }
 
-  .no-chats {
-    padding: 20px; text-align: center;
-    font-size: 13px; color: var(--text3); line-height: 1.6;
-  }
+  .no-chats { padding: 20px; text-align: center; font-size: 13px; color: var(--text3); line-height: 1.6; }
 
-  /* ── OVERLAY ── */
   #overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 40; display: none; backdrop-filter: blur(2px);
   }
   #overlay.show { display: block; }
 
-  /* ── MAIN ── */
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-  /* ── HEADER ── */
   #header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 13px 16px;
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0;
   }
 
   .hlogo {
     width: 32px; height: 32px;
     background: linear-gradient(145deg, #e8956d, #c4623a);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-size: 16px;
     box-shadow: 0 2px 12px rgba(232,149,109,0.3);
   }
 
@@ -134,11 +116,9 @@
     width: 36px; height: 36px; border-radius: 10px;
     border: 1px solid var(--border2); background: var(--surface2);
     color: var(--text2); display: flex; align-items: center;
-    justify-content: center; cursor: pointer; font-size: 16px;
-    transition: all 0.15s;
+    justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.15s;
   }
   .hbtn:active { transform: scale(0.92); background: var(--surface3); }
-
   .hright { display: flex; gap: 7px; }
 
   .status-dot {
@@ -149,7 +129,6 @@
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .status-dot.thinking { background: var(--accent); box-shadow: 0 0 6px rgba(232,149,109,0.5); }
 
-  /* ── CHAT ── */
   #chat {
     flex: 1; overflow-y: auto; padding: 20px 14px;
     display: flex; flex-direction: column; gap: 16px;
@@ -158,7 +137,6 @@
   #chat::-webkit-scrollbar { width: 2px; }
   #chat::-webkit-scrollbar-thumb { background: var(--surface3); }
 
-  /* ── WELCOME ── */
   #welcome {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -184,7 +162,6 @@
   }
   .chip:active { background: var(--surface3); transform: scale(0.95); }
 
-  /* ── MESSAGES ── */
   .msg { display: flex; gap: 10px; animation: msgIn 0.25s ease-out; }
   .msg.user { flex-direction: row-reverse; }
   @keyframes msgIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -210,14 +187,20 @@
     background: #172030; border: 1px solid rgba(90,150,220,0.15);
     border-bottom-right-radius: 5px;
   }
-  .bubble code { background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: monospace; }
-  .bubble pre { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-x: auto; margin: 8px 0; font-size: 13px; font-family: monospace; }
-  .bubble pre code { background: none; padding: 0; }
+
+  /* Code highlighting */
+  .bubble pre { margin: 8px 0; border-radius: 10px; overflow: hidden; }
+  .bubble pre code { font-size: 13px; font-family: monospace; border-radius: 10px; }
+  .bubble code:not(pre code) { background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+
   .bubble strong { color: var(--accent); font-weight: 500; }
   .bubble p { margin-bottom: 8px; }
   .bubble p:last-child { margin-bottom: 0; }
   .bubble ul, .bubble ol { padding-left: 18px; margin: 6px 0; }
   .bubble li { margin-bottom: 4px; }
+
+  /* Generated image */
+  .gen-img { max-width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid var(--border2); }
 
   .model-tag { font-size: 10px; color: var(--text3); margin-top: 4px; margin-left: 40px; }
 
@@ -227,7 +210,6 @@
   .dot:nth-child(2){animation-delay:0.16s} .dot:nth-child(3){animation-delay:0.32s}
   @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.3} 40%{transform:translateY(-7px);opacity:1} }
 
-  /* ── INPUT ── */
   #input-area {
     padding: 10px 12px; padding-bottom: calc(10px + var(--safe-b));
     background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0;
@@ -246,16 +228,20 @@
     max-height: 130px; min-height: 24px; padding: 0;
   }
   #inp::placeholder { color: var(--text3); }
-  #sendbtn {
+
+  .input-btn {
     width: 36px; height: 36px; border-radius: 10px;
-    background: var(--accent); border: none; color: white;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0; transition: all 0.15s; font-size: 17px;
+    border: none; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s; font-size: 17px;
   }
+  #voicebtn { background: var(--surface3); color: var(--text2); font-size: 18px; }
+  #voicebtn.listening { background: #e07070; color: white; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  #sendbtn { background: var(--accent); }
   #sendbtn:active { transform: scale(0.88); background: var(--accent2); }
   #sendbtn:disabled { background: var(--surface3); color: var(--text3); cursor: default; transform: none; }
 
-  /* ── TOAST ── */
   #toast {
     position: fixed; bottom: 80px; left: 50%;
     transform: translateX(-50%) translateY(16px);
@@ -271,8 +257,6 @@
 <div id="overlay" onclick="closeSidebar()"></div>
 
 <div id="layout">
-
-  <!-- Sidebar -->
   <div id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">Chats</div>
@@ -282,14 +266,13 @@
     <div id="chat-list"></div>
   </div>
 
-  <!-- Main -->
   <div id="main">
     <div id="header">
       <div class="hleft">
         <div class="hbtn" onclick="openSidebar()">☰</div>
         <div class="hlogo">✦</div>
         <div>
-          <div class="htitle">AI Chat</div>
+          <div class="htitle">Aki</div>
           <div class="hsubtitle" id="subtitle">Ready</div>
         </div>
         <div class="status-dot" id="statusdot"></div>
@@ -303,9 +286,10 @@
 
     <div id="input-area">
       <div class="input-row">
-        <textarea id="inp" placeholder="Ask anything…" rows="1"
+        <textarea id="inp" placeholder="Ask Aki anything…" rows="1"
           onkeydown="onKey(event)" oninput="resize(this)"></textarea>
-        <button id="sendbtn" onclick="send()">↑</button>
+        <button class="input-btn" id="voicebtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+        <button class="input-btn" id="sendbtn" onclick="send()">↑</button>
       </div>
     </div>
   </div>
@@ -314,26 +298,26 @@
 <div id="toast"></div>
 
 <script>
-// ── STATE ──
-let chats = {}; // { id: { title, messages: [] } }
+let chats = {};
 let currentChatId = null;
 let busy = false;
+let recognition = null;
+let listening = false;
 
 const API_URL = '/api/chat';
+const IMG_TRIGGERS = /generate|create|draw|make|show me|image of|picture of|paint|illustrate/i;
 
-// ── INIT ──
 function init() {
   loadFromStorage();
-  if (Object.keys(chats).length === 0) {
-    newChat(false);
-  } else {
+  if (Object.keys(chats).length === 0) newChat(false);
+  else {
     const lastId = localStorage.getItem('current_chat');
     loadChat(lastId && chats[lastId] ? lastId : Object.keys(chats)[0]);
   }
   renderChatList();
+  setupVoice();
 }
 
-// ── STORAGE ──
 function saveToStorage() {
   localStorage.setItem('ai_chats', JSON.stringify(chats));
   localStorage.setItem('current_chat', currentChatId);
@@ -346,7 +330,6 @@ function loadFromStorage() {
   } catch(e) { chats = {}; }
 }
 
-// ── SIDEBAR ──
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
@@ -357,7 +340,6 @@ function closeSidebar() {
   document.getElementById('overlay').classList.remove('show');
 }
 
-// ── CHAT MANAGEMENT ──
 function newChat(save = true) {
   const id = 'chat_' + Date.now();
   chats[id] = { title: 'New Chat', messages: [] };
@@ -408,30 +390,27 @@ function renderChatList() {
 function renderMessages() {
   const chat = document.getElementById('chat');
   const messages = chats[currentChatId]?.messages || [];
-
   if (messages.length === 0) {
     chat.innerHTML = `
       <div id="welcome">
         <div class="wlogo">✦</div>
-        <div class="wtitle">Hello, <em>friend</em></div>
-        <div class="wsub">Your AI is ready. Ask me anything.</div>
+        <div class="wtitle">Hey, I'm <em>Aki</em></div>
+        <div class="wsub">Your smart AI assistant. Ask me anything — I'll find it.</div>
         <div class="wchips">
-          <div class="chip" onclick="q('Write me a motivational message')">Motivate me</div>
-          <div class="chip" onclick="q('Give me a business idea for 2026')">Business idea</div>
-          <div class="chip" onclick="q('What is today\\'s date and time?')">Today\\'s date</div>
-          <div class="chip" onclick="q('Help me fix my code')">Fix my code</div>
-          <div class="chip" onclick="q('Latest AI news')">AI news</div>
+          <div class="chip" onclick="q('What happened in India today?')">Today's news</div>
+          <div class="chip" onclick="q('Generate an image of a futuristic city')">Generate image</div>
+          <div class="chip" onclick="q('Current dollar to rupee rate')">$ to ₹ rate</div>
+          <div class="chip" onclick="q('Write a Python hello world')">Write code</div>
+          <div class="chip" onclick="q('Who created you?')">Who made you?</div>
         </div>
       </div>`;
     return;
   }
-
   chat.innerHTML = '';
-  messages.forEach(m => addBubble(m.role, m.content, m.model, false));
+  messages.forEach(m => addBubble(m.role, m.content, m.model, m.image, false));
   scrollDown();
 }
 
-// ── SEND ──
 function q(text) {
   document.getElementById('inp').value = text;
   send();
@@ -452,53 +431,42 @@ async function send() {
   const text = inp.value.trim();
   if (!text) return;
 
-  // Hide welcome
   const w = document.getElementById('welcome');
   if (w) w.remove();
 
   inp.value = ''; inp.style.height = 'auto';
 
-  // Add to history
   chats[currentChatId].messages.push({ role: 'user', content: text });
 
-  // Update chat title after first message
   if (chats[currentChatId].messages.length === 1) {
     chats[currentChatId].title = text.substring(0, 35) + (text.length > 35 ? '…' : '');
     renderChatList();
   }
 
-  addBubble('user', text, null, true);
+  addBubble('user', text, null, null, true);
   scrollDown();
 
   busy = true;
   document.getElementById('sendbtn').disabled = true;
   setStatus('thinking');
-
   const thinkEl = addThinking();
 
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chats[currentChatId].messages })
-    });
-
-    const data = await res.json();
-    thinkEl.remove();
-
-    if (!res.ok) throw new Error(data.error || 'Error');
-
-    chats[currentChatId].messages.push({ role: 'assistant', content: data.text, model: data.model });
-    saveToStorage();
-    addBubble('ai', data.text, data.model, true);
-    setStatus('ready');
-
-  } catch(err) {
-    thinkEl.remove();
-    addBubble('ai', `**Oops.** ${err.message || 'Connection error. Try again.'}`, null, true);
-    setStatus('ready');
-    // Remove failed user message from history
-    chats[currentChatId].messages.pop();
+  // Check if image generation requested
+  if (IMG_TRIGGERS.test(text)) {
+    try {
+      const imgUrl = await generateImage(text);
+      thinkEl.remove();
+      const aiMsg = { role: 'assistant', content: 'Here you go! 🎨', image: imgUrl };
+      chats[currentChatId].messages.push(aiMsg);
+      saveToStorage();
+      addBubble('ai', aiMsg.content, null, imgUrl, true);
+      setStatus('ready');
+    } catch(e) {
+      // fallback to normal chat if image fails
+      await normalChat(text, thinkEl);
+    }
+  } else {
+    await normalChat(text, thinkEl);
   }
 
   busy = false;
@@ -506,12 +474,48 @@ async function send() {
   scrollDown();
 }
 
+async function normalChat(text, thinkEl) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chats[currentChatId].messages })
+    });
+    const data = await res.json();
+    thinkEl.remove();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    chats[currentChatId].messages.push({ role: 'assistant', content: data.text });
+    saveToStorage();
+    addBubble('ai', data.text, null, null, true);
+    setStatus('ready');
+  } catch(err) {
+    thinkEl.remove();
+    addBubble('ai', `**Oops.** ${err.message || 'Connection error. Try again.'}`, null, null, true);
+    setStatus('ready');
+    chats[currentChatId].messages.pop();
+  }
+}
+
+async function generateImage(prompt) {
+  // Using Pollinations.ai — completely free, no API key needed
+  const clean = prompt.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate/gi, '').trim();
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${Date.now()}`;
+  // Preload to verify
+  await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = url;
+  });
+  return url;
+}
+
 function setStatus(s) {
   document.getElementById('statusdot').className = 'status-dot' + (s === 'thinking' ? ' thinking' : '');
   document.getElementById('subtitle').textContent = s === 'thinking' ? 'Thinking…' : 'Ready';
 }
 
-function addBubble(role, content, model, animate) {
+function addBubble(role, content, model, image, animate) {
   const chat = document.getElementById('chat');
   const wrap = document.createElement('div');
 
@@ -527,6 +531,15 @@ function addBubble(role, content, model, animate) {
   bubble.className = 'bubble';
   bubble.innerHTML = md(content);
 
+  // Add generated image if present
+  if (image) {
+    const img = document.createElement('img');
+    img.src = image;
+    img.className = 'gen-img';
+    img.alt = 'Generated image';
+    bubble.appendChild(img);
+  }
+
   div.appendChild(av);
   div.appendChild(bubble);
   wrap.appendChild(div);
@@ -539,6 +552,9 @@ function addBubble(role, content, model, animate) {
   }
 
   chat.appendChild(wrap);
+
+  // Apply syntax highlighting
+  wrap.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
 }
 
 function addThinking() {
@@ -554,7 +570,10 @@ function addThinking() {
 function md(text) {
   return text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/```[\w]*\n?([\s\S]*?)```/g,(_,c)=>`<pre><code>${c.trim()}</code></pre>`)
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const l = lang || 'plaintext';
+      return `<pre><code class="language-${l}">${code.trim()}</code></pre>`;
+    })
     .replace(/`([^`]+)`/g,'<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
     .replace(/\*([^*\n]+)\*/g,'<em>$1</em>')
@@ -582,7 +601,48 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// Android keyboard fix
+// ── VOICE INPUT ──
+function setupVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('voicebtn').style.display = 'none';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-IN';
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('inp').value = transcript;
+    resize(document.getElementById('inp'));
+    stopListening();
+    send();
+  };
+
+  recognition.onerror = () => stopListening();
+  recognition.onend = () => stopListening();
+}
+
+function toggleVoice() {
+  if (listening) { stopListening(); return; }
+  if (!recognition) { toast('Voice not supported on this browser'); return; }
+  listening = true;
+  document.getElementById('voicebtn').classList.add('listening');
+  document.getElementById('voicebtn').textContent = '🔴';
+  setStatus('listening');
+  recognition.start();
+}
+
+function stopListening() {
+  listening = false;
+  document.getElementById('voicebtn').classList.remove('listening');
+  document.getElementById('voicebtn').textContent = '🎤';
+  setStatus('ready');
+  try { recognition.stop(); } catch(e) {}
+}
+
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     document.getElementById('main').style.height = window.visualViewport.height + 'px';
