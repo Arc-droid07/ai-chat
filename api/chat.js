@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   ];
 
   const models = [
-    'google/gemini-2.0-flash-exp:free',
+    model: 'openrouter/auto',
     'deepseek/deepseek-r1:free',
     'deepseek/deepseek-v3:free',
     'mistralai/mistral-7b-instruct:free'
