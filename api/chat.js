@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'perplexity/sonar',
         messages: allMessages,
         max_tokens: 1500
       })
