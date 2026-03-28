@@ -8,11 +8,13 @@ export default async function handler(req, res) {
     const { messages } = req.body;
     if (!messages?.length) return res.status(400).json({ error: 'No messages' });
     const lastUserMsg = messages[messages.length - 1].content;
+
     // Skip AI for image generation — handled by frontend
     const IMG_CHECK = /generate|create|draw|make|show me|image of|picture of|paint|illustrate/i;
     if (IMG_CHECK.test(lastUserMsg)) {
       return res.status(200).json({ text: '__IMAGE__' });
     }
+
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
