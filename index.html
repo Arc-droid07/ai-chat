@@ -484,6 +484,20 @@ async function normalChat(text, thinkEl) {
     const data = await res.json();
     thinkEl.remove();
     if (!res.ok) throw new Error(data.error || 'Error');
+    // If backend signals image — generate it via frontend
+    if (data.text === '__IMAGE__') {
+      try {
+        const imgUrl = await generateImage(text);
+        const aiMsg = { role: 'assistant', content: 'Here you go! 🎨', image: imgUrl };
+        chats[currentChatId].messages.push(aiMsg);
+        saveToStorage();
+        addBubble('ai', aiMsg.content, null, imgUrl, true);
+      } catch(e) {
+        addBubble('ai', 'Sorry, image generation failed. Try again!', null, null, true);
+      }
+      setStatus('ready');
+      return;
+    }
     chats[currentChatId].messages.push({ role: 'assistant', content: data.text });
     saveToStorage();
     addBubble('ai', data.text, null, null, true);
@@ -495,7 +509,6 @@ async function normalChat(text, thinkEl) {
     chats[currentChatId].messages.pop();
   }
 }
-
 async function generateImage(prompt) {
   // Using Pollinations.ai — completely free, no API key needed
   const clean = prompt.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate/gi, '').trim();
