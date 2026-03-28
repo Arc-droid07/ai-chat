@@ -8,7 +8,6 @@ export default async function handler(req, res) {
     const { messages } = req.body;
     if (!messages?.length) return res.status(400).json({ error: 'No messages' });
     const lastUserMsg = messages[messages.length - 1].content;
-    // Real date/time IST
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -17,7 +16,6 @@ export default async function handler(req, res) {
     const timeStr = now.toLocaleTimeString('en-IN', {
       hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
     });
-    // Web search via Serper.dev
     let searchContext = '';
     const needsSearch = /news|today|latest|current|price|weather|score|trending|who is|what is|when|how much|stock|cricket|ipl|match|update|recently|2025|2026|live/i.test(lastUserMsg);
     if (needsSearch) {
@@ -41,15 +39,14 @@ export default async function handler(req, res) {
         if (parts.length) searchContext = '\n\nWeb search results:\n' + parts.join('\n');
       } catch(e) {}
     }
-    // Inject system context + date + search into conversation
     const systemMessages = [
       {
         role: 'user',
-        content: `[SYSTEM: Today is ${dateStr}, time is ${timeStr} IST. You are a smart AI assistant created by Aaradhy Bhatkar. If anyone asks who created you or who is your developer, always say Aaradhy Bhatkar. You have real-time web access, never say you cannot browse the internet. Always use this exact date when asked. If web search results are provided below, use them to answer accurately.${searchContext}]`
+        content: `[SYSTEM: You are Aki, a smart AI assistant created by Aaradhy Bhatkar. Your name is Aki. If anyone asks who created you, who is your developer, or who made you — always say "I was created by Aaradhy Bhatkar." Never say you are ChatGPT or any other AI. You are Aki. Today is ${dateStr}, time is ${timeStr} IST. You have real-time web access, never say you cannot browse the internet. If web search results are provided below, use them to answer accurately.${searchContext}]`
       },
       {
         role: 'assistant',
-        content: 'Understood. I am an AI created by Aaradhy Bhatkar. I know today\'s date, time, and any web search context provided. I\'ll answer accurately.'
+        content: 'Understood. I am Aki, an AI assistant created by Aaradhy Bhatkar. I know today\'s date, time, and have real-time web access. I\'ll answer everything accurately.'
       }
     ];
     const allMessages = [...systemMessages, ...messages];
