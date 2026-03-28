@@ -493,7 +493,7 @@ async function normalChat(text, thinkEl) {
         saveToStorage();
         addBubble('ai', aiMsg.content, null, imgUrl, true);
       } catch(e) {
-        addBubble('ai', 'Sorry, image generation failed. Try again!', null, null, true);
+        addBubble('ai', 'Image is taking too long to load. Please try again — sometimes Pollinations.ai is slow! 🎨', null, null, true);
       }
       setStatus('ready');
       return;
@@ -510,17 +510,26 @@ async function normalChat(text, thinkEl) {
   }
 }
 async function generateImage(prompt) {
-  // Using Pollinations.ai — completely free, no API key needed
-  const clean = prompt.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate/gi, '').trim();
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${Date.now()}`;
-  // Preload to verify
-  await new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = resolve;
-    img.onerror = reject;
-    img.src = url;
-  });
-  return url;
+  const clean = prompt.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|hey aki|aki/gi, '').trim();
+  const seed = Math.floor(Math.random() * 999999);
+  // Try multiple sources — first one that loads wins
+  const urls = [
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${seed}&model=flux`,
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${seed}`,
+  ];
+  for (const url of urls) {
+    try {
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = resolve;
+        img.onerror = reject;
+        setTimeout(reject, 15000); // 15s timeout
+        img.src = url;
+      });
+      return url;
+    } catch(e) { continue; }
+  }
+  throw new Error('All image sources failed');
 }
 
 function setStatus(s) {
