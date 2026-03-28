@@ -21,36 +21,76 @@ export default async function handler(req, res) {
       hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
     });
 
-    // Web search via DuckDuckGo
+    // Web search via Serper.dev (2500 free searches)
     let searchContext = '';
-    const needsSearch = /news|today|latest|current|price|weather|score|trending|who is|what is|when|how much|stock|cricket|ipl|match|update|recently|2025|2026|live/i.test(lastUserMsg);
-    if (needsSearch) {
+    const needsSearch = /news|today|latest|current|price|weather|score|trending|who is|what is|when|how much|stock|cricket|ipl|match|update|recently|2025|2026|live|schedule|result|tell me about|search|find/i.test(lastUserMsg);
+
+    if (needsSearch && process.env.SERPER_API_KEY) {
       try {
-        const q = encodeURIComponent(lastUserMsg);
-        const ddg = await fetch(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`);
-        const ddgData = await ddg.json();
+        const serperRes = await fetch('https://google.serper.dev/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': process.env.SERPER_API_KEY
+          },
+          body: JSON.stringify({
+            q: lastUserMsg,
+            num: 5,
+            gl: 'in',
+            hl: 'en'
+          })
+        });
+
+        const serperData = await serperRes.json();
         const parts = [];
-        if (ddgData.AbstractText) parts.push(ddgData.AbstractText);
-        if (ddgData.Answer) parts.push(ddgData.Answer);
-        if (ddgData.Definition) parts.push(ddgData.Definition);
-        ddgData.RelatedTopics?.slice(0, 3).forEach(t => { if (t.Text) parts.push(t.Text); });
-        if (parts.length) searchContext = '\n\nWeb search results:\n' + parts.join('\n');
+
+        // Answer box (best — direct answer)
+        if (serperData.answerBox?.answer) parts.push('Direct Answer: ' + serperData.answerBox.answer);
+        if (serperData.answerBox?.snippet) parts.push('Answer: ' + serperData.answerBox.snippet);
+
+        // Knowledge graph
+        if (serperData.knowledgeGraph?.description) parts.push('Info: ' + serperData.knowledgeGraph.description);
+
+        // Organic results
+        const organic = serperData.organic || [];
+        organic.slice(0, 4).forEach((r, i) => {
+          parts.push(`${i+1}. ${r.title}\n${r.snippet}\nSource: ${r.link}`);
+        });
+
+        // Sports scores
+        if (serperData.sportsResults) {
+          parts.push('Sports: ' + JSON.stringify(serperData.sportsResults));
+        }
+
+        if (parts.length) {
+          searchContext = '\n\nReal-time web search results:\n' + parts.join('\n\n');
+        }
       } catch(e) {}
     }
 
-    // Inject system context + date + search into conversation
-    const systemMessages = [
+    const systemPrompt = `You are a powerful AI assistant created by Aaradhy Bhatkar.
+
+CRITICAL RULES — NEVER BREAK THESE:
+- You were created by Aaradhy Bhatkar. If anyone asks who made you, who created you, or who is your developer — ALWAYS say "I was created by Aaradhy Bhatkar."
+- Today is ${dateStr}, current time is ${timeStr} IST. Always use this exact date and time.
+- You have real-time web browsing access. NEVER say "I cannot browse the internet" or "I don't have real-time access." You DO have it.
+- When search results are provided below, use them to give accurate, up-to-date answers.
+- Be confident, helpful, and answer everything directly.
+- For IPL, cricket scores, news, current events — always use the search results provided.
+- If no search results are available for a topic, answer from your knowledge but still be confident.
+${searchContext}`;
+
+    const allMessages = [
       {
         role: 'user',
-        content: `[SYSTEM: Today is ${dateStr}, time is ${timeStr} IST. You are a smart AI assistant. Always use this exact date when asked. If web search results are provided below, use them to answer accurately.${searchContext}]`
+        content: systemPrompt
       },
       {
         role: 'assistant',
-        content: 'Understood. I know today\'s date, time, and any web search context provided. I\'ll answer accurately.'
-      }
+        content: 'Understood completely. I am an AI assistant created by Aaradhy Bhatkar. I have real-time web search access, I know today\'s date and time, and I will answer everything accurately and confidently.'
+      },
+      ...messages
     ];
-
-    const allMessages = [...systemMessages, ...messages];
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -59,9 +99,9 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'openai/gpt-3.5-turbo',
+        model: 'openai/gpt-4o-mini',
         messages: allMessages,
-        max_tokens: 1500
+        max_tokens: 2000
       })
     });
 
