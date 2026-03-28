@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#fafafa">
+<meta name="theme-color" content="#fafafa" id="theme-color-meta">
 <meta name="description" content="Aki — Your personal AI">
 <title>Aki</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
+  /* ── LIGHT THEME ── */
+  :root, [data-theme="light"] {
     --bg: #f7f7f5;
     --bg2: #ffffff;
     --surface: #ffffff;
@@ -23,18 +24,43 @@
     --accent: #1a1a1a;
     --accent2: #333333;
     --accent-light: rgba(26,26,26,0.06);
-    --accent-light2: rgba(26,26,26,0.1);
     --text: #1a1a1a;
     --text2: #6b6b6b;
     --text3: #b0b0b0;
     --user-bg: #1a1a1a;
     --user-text: #ffffff;
     --ai-bg: #ffffff;
+    --header-bg: rgba(247,247,245,0.85);
+    --input-bg: rgba(247,247,245,0.85);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
     --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
-    --safe-b: env(safe-area-inset-bottom, 0px);
-    --safe-t: env(safe-area-inset-top, 0px);
+  }
+
+  /* ── DARK THEME ── */
+  [data-theme="dark"] {
+    --bg: #0e0e0e;
+    --bg2: #161616;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --surface3: #2a2a2a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.1);
+    --border3: rgba(255,255,255,0.15);
+    --accent: #f5f5f5;
+    --accent2: #dddddd;
+    --accent-light: rgba(245,245,245,0.06);
+    --text: #f0f0f0;
+    --text2: #888888;
+    --text3: #444444;
+    --user-bg: #272727;
+    --user-text: #f0f0f0;
+    --ai-bg: #1a1a1a;
+    --header-bg: rgba(14,14,14,0.85);
+    --input-bg: rgba(14,14,14,0.85);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -44,6 +70,7 @@
     color: var(--text); overflow: hidden;
     font-family: 'Geist', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
   }
 
   /* ── LAYOUT ── */
@@ -58,33 +85,55 @@
     position: fixed; top: 0; left: 0; bottom: 0;
     z-index: 50;
     transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), background 0.3s, border-color 0.3s;
     box-shadow: var(--shadow-lg);
   }
   #sidebar.open { transform: translateX(0); }
 
   .sidebar-top {
-    padding: calc(20px + var(--safe-t)) 20px 16px;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 16px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
   }
 
   .sidebar-brand { display: flex; align-items: center; gap: 10px; }
 
-  .sidebar-logo {
+  /* ── AKI LOGO — Grey + Yellow ── */
+  .aki-logo {
     width: 32px; height: 32px;
-    background: var(--accent);
+    background: linear-gradient(135deg, #c8c8c0 0%, #e8c840 60%, #d4a820 100%);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-family: 'Playfair Display', serif;
     font-size: 16px; font-weight: 600;
-    color: white; letter-spacing: -0.02em;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(212,168,32,0.3);
+    flex-shrink: 0;
+  }
+
+  .aki-logo.lg {
+    width: 72px; height: 72px;
+    border-radius: 22px;
+    font-size: 32px;
+    box-shadow: 0 8px 32px rgba(212,168,32,0.35), 0 2px 8px rgba(0,0,0,0.1);
+    animation: wFloat 5s ease-in-out infinite;
+  }
+
+  .aki-logo.md {
+    width: 34px; height: 34px;
+    border-radius: 10px; font-size: 16px;
+  }
+
+  @keyframes wFloat {
+    0%,100% { transform: translateY(0); box-shadow: 0 8px 32px rgba(212,168,32,0.35); }
+    50% { transform: translateY(-8px); box-shadow: 0 20px 48px rgba(212,168,32,0.45); }
   }
 
   .sidebar-name {
     font-family: 'Playfair Display', serif;
     font-size: 18px; font-weight: 500;
     color: var(--text); letter-spacing: -0.02em;
+    transition: color 0.3s;
   }
 
   .close-btn {
@@ -101,7 +150,7 @@
     padding: 12px 16px;
     background: var(--accent);
     border: none; border-radius: 12px;
-    color: white; font-family: 'Geist', sans-serif;
+    color: var(--user-text); font-family: 'Geist', sans-serif;
     font-size: 14px; font-weight: 500;
     cursor: pointer; transition: all 0.2s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -113,9 +162,10 @@
     padding: 8px 20px 6px;
     font-size: 10px; font-weight: 600;
     color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em;
+    transition: color 0.3s;
   }
 
-  #chat-list { flex: 1; overflow-y: auto; padding: 4px 10px 16px; }
+  #chat-list { flex: 1; overflow-y: auto; padding: 4px 10px 8px; }
   #chat-list::-webkit-scrollbar { width: 2px; }
   #chat-list::-webkit-scrollbar-thumb { background: var(--surface3); }
 
@@ -141,6 +191,49 @@
 
   .no-chats { padding: 24px 16px; text-align: center; font-size: 13px; color: var(--text3); line-height: 1.7; }
 
+  /* ── SETTINGS SECTION IN SIDEBAR ── */
+  .sidebar-settings {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .settings-label {
+    font-size: 10px; font-weight: 600;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0 4px;
+  }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .setting-row-left { display: flex; align-items: center; gap: 10px; }
+  .setting-icon { font-size: 16px; }
+  .setting-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  .setting-desc { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  /* Toggle switch */
+  .toggle {
+    width: 44px; height: 24px; border-radius: 100px;
+    background: var(--surface3); border: none; cursor: pointer;
+    position: relative; transition: background 0.25s; flex-shrink: 0;
+    padding: 0;
+  }
+  .toggle.on { background: #e8c840; }
+  .toggle::after {
+    content: '';
+    position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: white; transition: transform 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(20px); }
+
   /* ── OVERLAY ── */
   #overlay {
     position: fixed; inset: 0; z-index: 40;
@@ -150,16 +243,16 @@
   #overlay.show { display: block; }
 
   /* ── MAIN ── */
-  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); transition: background 0.3s; }
 
   /* ── HEADER ── */
   #header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: calc(14px + var(--safe-t)) 18px 14px;
-    background: rgba(247,247,245,0.85);
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    background: var(--header-bg);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    flex-shrink: 0; transition: background 0.3s, border-color 0.3s;
   }
 
   .hleft { display: flex; align-items: center; gap: 12px; }
@@ -173,31 +266,22 @@
   }
   .menu-btn:active { background: var(--surface2); transform: scale(0.93); }
 
-  .header-logo {
-    width: 34px; height: 34px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 16px; color: white;
-    box-shadow: var(--shadow-sm);
-  }
-
   .header-name {
     font-family: 'Playfair Display', serif;
     font-size: 18px; font-weight: 500;
     letter-spacing: -0.02em; color: var(--text);
+    transition: color 0.3s;
   }
 
   .header-sub {
     font-size: 11px; color: var(--text3); margin-top: 1px;
     display: flex; align-items: center; gap: 5px;
+    transition: color 0.3s;
   }
 
   .online-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: #22c55e;
-    animation: onlineBlink 2.5s infinite;
+    background: #22c55e; animation: onlineBlink 2.5s infinite;
   }
   @keyframes onlineBlink { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .online-dot.thinking { background: #f59e0b; }
@@ -228,39 +312,21 @@
     min-height: 100%; text-align: center; padding: 40px 24px; gap: 18px;
   }
 
-  .w-logo {
-    width: 72px; height: 72px;
-    background: var(--accent);
-    border-radius: 22px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 32px; color: white;
-    box-shadow: var(--shadow-lg);
-    animation: wFloat 5s ease-in-out infinite;
-  }
-  @keyframes wFloat {
-    0%,100% { transform: translateY(0); box-shadow: var(--shadow-lg); }
-    50% { transform: translateY(-8px); box-shadow: 0 16px 40px rgba(0,0,0,0.14); }
-  }
-
   .w-title {
     font-family: 'Playfair Display', serif;
     font-size: 32px; font-weight: 500;
     letter-spacing: -0.03em; line-height: 1.1;
-    color: var(--text);
+    color: var(--text); transition: color 0.3s;
   }
-
   .w-title em { font-style: italic; }
 
   .w-sub {
     font-size: 15px; color: var(--text2);
     max-width: 280px; line-height: 1.6; font-weight: 300;
+    transition: color 0.3s;
   }
 
-  .w-divider {
-    width: 40px; height: 1px;
-    background: var(--border2);
-  }
+  .w-divider { width: 40px; height: 1px; background: var(--border2); }
 
   .w-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 320px; }
 
@@ -269,12 +335,10 @@
     background: var(--surface);
     border: 1px solid var(--border2);
     border-radius: 100px;
-    font-size: 13px; font-weight: 400;
-    color: var(--text2); cursor: pointer;
-    transition: all 0.18s;
-    box-shadow: var(--shadow-sm);
+    font-size: 13px; color: var(--text2); cursor: pointer;
+    transition: all 0.18s; box-shadow: var(--shadow-sm);
   }
-  .chip:hover { background: var(--accent); color: white; border-color: var(--accent); box-shadow: var(--shadow); }
+  .chip:hover { background: var(--accent); color: var(--user-text); border-color: var(--accent); }
   .chip:active { transform: scale(0.95); }
 
   /* ── MESSAGES ── */
@@ -290,19 +354,20 @@
     width: 30px; height: 30px; border-radius: 9px;
     flex-shrink: 0; display: flex; align-items: center;
     justify-content: center; margin-top: 2px;
-    font-size: 12px; font-weight: 600;
   }
 
   .av.ai {
-    background: var(--accent); color: white;
-    font-family: 'Playfair Display', serif; font-size: 14px;
-    box-shadow: var(--shadow-sm);
+    background: linear-gradient(135deg, #c8c8c0, #e8c840, #d4a820);
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 600; color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(212,168,32,0.3);
   }
 
   .av.you {
     background: var(--surface2);
     border: 1px solid var(--border2);
     color: var(--text2); font-size: 10px; font-weight: 600;
+    font-family: 'Geist', sans-serif;
   }
 
   .bubble-wrap { display: flex; flex-direction: column; max-width: calc(100% - 44px); gap: 4px; }
@@ -311,6 +376,7 @@
   .bubble {
     padding: 12px 16px; border-radius: 18px;
     font-size: 15px; line-height: 1.7;
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .msg.ai .bubble {
@@ -319,7 +385,6 @@
     border-bottom-left-radius: 5px;
     box-shadow: var(--shadow-sm);
     color: var(--text);
-    font-family: 'Geist', sans-serif;
   }
 
   .msg.user .bubble {
@@ -340,17 +405,15 @@
     margin: 10px 0; font-family: 'Courier New', monospace; font-size: 13px;
   }
   .bubble pre code { background: none; border: none; padding: 0; }
-  .bubble strong { font-weight: 600; color: var(--text); }
+  .bubble strong { font-weight: 600; }
   .bubble em { font-style: italic; color: var(--text2); }
   .bubble p { margin-bottom: 9px; }
   .bubble p:last-child { margin-bottom: 0; }
   .bubble ul, .bubble ol { padding-left: 20px; margin: 7px 0; }
   .bubble li { margin-bottom: 5px; }
-
-  .msg.user .bubble strong { color: rgba(255,255,255,0.9); }
   .msg.user .bubble code { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); color: white; }
 
-  .model-tag { font-size: 10px; color: var(--text3); padding-left: 4px; }
+  .model-tag { font-size: 10px; color: var(--text3); padding-left: 4px; transition: color 0.3s; }
 
   /* Thinking */
   .thinking-wrap { display: flex; gap: 10px; animation: msgIn 0.28s ease-out; }
@@ -359,6 +422,7 @@
     background: var(--ai-bg); border: 1px solid var(--border);
     border-radius: 18px; border-bottom-left-radius: 5px;
     align-items: center; box-shadow: var(--shadow-sm);
+    transition: background 0.3s;
   }
   .dot {
     width: 6px; height: 6px; border-radius: 50%;
@@ -369,17 +433,17 @@
   .dot:nth-child(3) { animation-delay: 0.32s; }
   @keyframes dotBounce {
     0%,80%,100% { transform: translateY(0); opacity: 0.4; }
-    40% { transform: translateY(-6px); opacity: 1; background: var(--accent); }
+    40% { transform: translateY(-6px); opacity: 1; background: #e8c840; }
   }
 
   /* ── INPUT ── */
   #input-area {
     padding: 12px 14px;
-    padding-bottom: calc(12px + var(--safe-b));
-    background: rgba(247,247,245,0.85);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--input-bg);
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);
-    flex-shrink: 0;
+    flex-shrink: 0; transition: background 0.3s, border-color 0.3s;
   }
 
   .input-wrap {
@@ -388,12 +452,12 @@
     border: 1px solid var(--border2);
     border-radius: 18px; padding: 10px 10px 10px 16px;
     box-shadow: var(--shadow);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
   }
 
   .input-wrap:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(26,26,26,0.06), var(--shadow);
+    border-color: #e8c840;
+    box-shadow: 0 0 0 3px rgba(232,200,64,0.12), var(--shadow);
   }
 
   #inp {
@@ -401,24 +465,26 @@
     color: var(--text); font-family: 'Geist', sans-serif;
     font-size: 15px; font-weight: 300; line-height: 1.5;
     resize: none; max-height: 130px; min-height: 24px; padding: 0;
+    transition: color 0.3s;
   }
   #inp::placeholder { color: var(--text3); }
 
   #sendbtn {
     width: 36px; height: 36px; border-radius: 10px;
-    background: var(--accent); border: none; color: white;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0;
-    transition: all 0.15s; font-size: 17px; font-weight: 600;
+    background: linear-gradient(135deg, #c8c8c0, #e8c840);
+    border: none; color: #1a1a1a; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s; font-size: 17px; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(212,168,32,0.3);
   }
-  #sendbtn:active { transform: scale(0.88); background: var(--accent2); }
-  #sendbtn:disabled { background: var(--surface3); color: var(--text3); cursor: default; transform: none; }
+  #sendbtn:active { transform: scale(0.88); }
+  #sendbtn:disabled { background: var(--surface3); color: var(--text3); cursor: default; transform: none; box-shadow: none; }
 
   /* ── TOAST ── */
   #toast {
     position: fixed; bottom: 90px; left: 50%;
     transform: translateX(-50%) translateY(16px);
-    background: var(--accent); color: white;
+    background: var(--accent); color: var(--user-text);
     padding: 9px 20px; border-radius: 100px;
     font-size: 13px; opacity: 0; transition: all 0.22s;
     pointer-events: none; white-space: nowrap; z-index: 999;
@@ -437,14 +503,46 @@
   <div id="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-brand">
-        <div class="sidebar-logo">A</div>
+        <div class="aki-logo">A</div>
         <div class="sidebar-name">Aki</div>
       </div>
       <div class="close-btn" onclick="closeSidebar()">✕</div>
     </div>
+
     <button class="new-chat-btn" onclick="newChat()">+ New conversation</button>
+
     <div class="sidebar-label">Recent</div>
     <div id="chat-list"></div>
+
+    <!-- Settings at bottom of sidebar -->
+    <div class="sidebar-settings">
+      <div class="settings-label">Settings</div>
+
+      <!-- Dark mode toggle -->
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-icon" id="theme-icon">🌙</div>
+          <div>
+            <div class="setting-title" id="theme-title">Dark Mode</div>
+            <div class="setting-desc" id="theme-desc">Switch to dark theme</div>
+          </div>
+        </div>
+        <button class="toggle" id="dark-toggle" onclick="toggleTheme()"></button>
+      </div>
+
+      <!-- Font size -->
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-icon">Aa</div>
+          <div>
+            <div class="setting-title">Text Size</div>
+            <div class="setting-desc" id="font-desc">Medium</div>
+          </div>
+        </div>
+        <button class="toggle" id="font-toggle" onclick="toggleFont()"></button>
+      </div>
+
+    </div>
   </div>
 
   <!-- Main -->
@@ -454,7 +552,7 @@
     <div id="header">
       <div class="hleft">
         <div class="menu-btn" onclick="openSidebar()">☰</div>
-        <div class="header-logo">A</div>
+        <div class="aki-logo md">A</div>
         <div>
           <div class="header-name">Aki</div>
           <div class="header-sub">
@@ -487,9 +585,17 @@
 let chats = {};
 let currentChatId = null;
 let busy = false;
+let darkMode = false;
+let largeFont = false;
 const API_URL = '/api/chat';
 
 function init() {
+  // Load theme preference
+  darkMode = localStorage.getItem('aki_dark') === 'true';
+  largeFont = localStorage.getItem('aki_largefont') === 'true';
+  applyTheme(false);
+  applyFont(false);
+
   loadStorage();
   if (!Object.keys(chats).length) {
     newChat(false);
@@ -500,6 +606,51 @@ function init() {
   renderList();
 }
 
+// ── THEME ──
+function toggleTheme() {
+  darkMode = !darkMode;
+  localStorage.setItem('aki_dark', darkMode);
+  applyTheme(true);
+}
+
+function applyTheme(animate) {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+
+  const toggle = document.getElementById('dark-toggle');
+  const icon = document.getElementById('theme-icon');
+  const title = document.getElementById('theme-title');
+  const desc = document.getElementById('theme-desc');
+  const meta = document.getElementById('theme-color-meta');
+
+  toggle.className = 'toggle' + (darkMode ? ' on' : '');
+  icon.textContent = darkMode ? '☀️' : '🌙';
+  title.textContent = darkMode ? 'Light Mode' : 'Dark Mode';
+  desc.textContent = darkMode ? 'Switch to light theme' : 'Switch to dark theme';
+  meta.content = darkMode ? '#0e0e0e' : '#fafafa';
+
+  if (animate) toast(darkMode ? '🌙 Dark mode on' : '☀️ Light mode on');
+}
+
+// ── FONT SIZE ──
+function toggleFont() {
+  largeFont = !largeFont;
+  localStorage.setItem('aki_largefont', largeFont);
+  applyFont(true);
+}
+
+function applyFont(animate) {
+  const toggle = document.getElementById('font-toggle');
+  const desc = document.getElementById('font-desc');
+  toggle.className = 'toggle' + (largeFont ? ' on' : '');
+  desc.textContent = largeFont ? 'Large' : 'Medium';
+  document.querySelectorAll('.bubble').forEach(b => {
+    b.style.fontSize = largeFont ? '17px' : '15px';
+  });
+  document.getElementById('inp').style.fontSize = largeFont ? '17px' : '15px';
+}
+
+// ── STORAGE ──
 function loadStorage() {
   try {
     const s = localStorage.getItem('aki_chats');
@@ -512,16 +663,17 @@ function save() {
   localStorage.setItem('aki_current', currentChatId);
 }
 
+// ── SIDEBAR ──
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
-
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
 
+// ── CHAT MANAGEMENT ──
 function newChat(doSave = true) {
   const id = 'c' + Date.now();
   chats[id] = { title: 'New conversation', messages: [] };
@@ -575,17 +727,17 @@ function renderMessages() {
   if (!msgs.length) {
     chat.innerHTML = `
       <div id="welcome">
-        <div class="w-logo">A</div>
+        <div class="aki-logo lg">A</div>
         <div class="w-title">Hi, I'm <em>Aki</em></div>
-        <div class="w-sub">Your personal AI — smart, fast, and always here. What's on your mind?</div>
+        <div class="w-sub">Your personal AI — smart, fast, always here. What's on your mind?</div>
         <div class="w-divider"></div>
         <div class="w-chips">
           <div class="chip" onclick="q('What can you do?')">What can you do?</div>
-          <div class="chip" onclick="q('Latest tech news today')">Today\\'s news</div>
+          <div class="chip" onclick="q('Latest tech news today')">Today's news</div>
           <div class="chip" onclick="q('Give me a business idea')">Business idea</div>
           <div class="chip" onclick="q('Help me write something')">Help me write</div>
           <div class="chip" onclick="q('Who created you?')">Who made you?</div>
-          <div class="chip" onclick="q('What is today\\'s date?')">Today\\'s date</div>
+          <div class="chip" onclick="q('What is today\\'s date?')">Today's date</div>
         </div>
       </div>`;
     return;
@@ -595,6 +747,7 @@ function renderMessages() {
   scrollDown();
 }
 
+// ── SEND ──
 function q(text) {
   document.getElementById('inp').value = text;
   send();
@@ -633,7 +786,6 @@ async function send() {
   busy = true;
   document.getElementById('sendbtn').disabled = true;
   setStatus('thinking');
-
   const thinkEl = addThinking();
 
   try {
@@ -685,6 +837,7 @@ function addBubble(role, content, model, animate) {
 
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
+  bubble.style.fontSize = largeFont ? '17px' : '15px';
   bubble.innerHTML = md(content);
   wrap.appendChild(bubble);
 
