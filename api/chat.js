@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 
     // Try primary model, fall back to backup if it fails
     let text = null;
-    const models = ['openai/gpt-4o-mini', 'openai/gpt-3.5-turbo'];
+    const models = ['google/gemma-3-4b-it:free', 'mistralai/mistral-7b-instruct:free', 'openai/gpt-4o-mini'];
     
     for (const model of models) {
       try {
