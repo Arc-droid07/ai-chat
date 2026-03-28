@@ -267,7 +267,6 @@ let recognition = null;
 let listening = false;
 
 const API_URL = '/api/chat';
-const IMG_TRIGGERS = /generate|create|draw|make|image of|picture of|paint|illustrate/i;
 
 function init() {
   loadFromStorage();
@@ -410,40 +409,6 @@ async function send() {
   busy = true;
   document.getElementById('sendbtn').disabled = true;
   setStatus('thinking');
-
-  const isImageReq = IMG_TRIGGERS.test(text);
-  const hasSubject = text.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|aki|hey/gi,'').trim().length > 3;
-
-  if (isImageReq && !hasSubject) {
-    addBubble('ai', 'Sure! What would you like me to generate an image of? 🎨 Describe it and I\'ll create it!', null, null, true);
-    setStatus('ready');
-    chats[currentChatId].messages.pop();
-    busy = false;
-    document.getElementById('sendbtn').disabled = false;
-    return;
-  }
-
-  if (isImageReq && hasSubject) {
-    const genEl = addGenerating();
-    try {
-      const imgUrl = await generateImage(text);
-      genEl.remove();
-      const aiMsg = { role: 'assistant', content: 'Here you go! 🎨', image: imgUrl };
-      chats[currentChatId].messages.push(aiMsg);
-      saveToStorage();
-      addBubble('ai', aiMsg.content, null, imgUrl, true);
-    } catch(e) {
-      genEl.remove();
-      addBubble('ai', '❌ Image generation failed. Please try again!', null, null, true);
-      chats[currentChatId].messages.pop();
-    }
-    setStatus('ready');
-    busy = false;
-    document.getElementById('sendbtn').disabled = false;
-    scrollDown();
-    return;
-  }
-
   const thinkEl = addThinking();
   await normalChat(text, thinkEl);
   busy = false;
@@ -461,6 +426,14 @@ async function normalChat(text, thinkEl) {
     const data = await res.json();
     thinkEl.remove();
     if (!res.ok) throw new Error(data.error || 'Error');
+    if (data.image) {
+      const aiMsg = { role: 'assistant', content: data.text, image: data.image };
+      chats[currentChatId].messages.push(aiMsg);
+      saveToStorage();
+      addBubble('ai', data.text, null, data.image, true);
+      setStatus('ready');
+      return;
+    }
     chats[currentChatId].messages.push({ role: 'assistant', content: data.text });
     saveToStorage();
     addBubble('ai', data.text, null, null, true);
@@ -471,30 +444,6 @@ async function normalChat(text, thinkEl) {
     setStatus('ready');
     chats[currentChatId].messages.pop();
   }
-}
-
-async function generateImage(prompt) {
-  const clean = prompt.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|hey aki|aki|please|can you|for me/gi, '').trim();
-  const seed = Math.floor(Math.random() * 999999);
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${seed}&model=flux&enhance=true`;
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(url);
-    img.onerror = () => reject(new Error('Failed'));
-    setTimeout(() => reject(new Error('Timeout')), 30000);
-    img.src = url;
-  });
-}
-
-function addGenerating() {
-  const chat = document.getElementById('chat');
-  const wrap = document.createElement('div');
-  wrap.className = 'thinking-wrap';
-  wrap.innerHTML = `<div class="av ai">✦</div><div class="thinking"><span style="color:var(--text2);font-size:13px;margin-right:6px">Generating image</span><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-  chat.appendChild(wrap);
-  scrollDown();
-  return wrap;
 }
 
 function setStatus(s) {
