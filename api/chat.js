@@ -9,22 +9,19 @@ export default async function handler(req, res) {
     if (!messages?.length) return res.status(400).json({ error: 'No messages' });
     const lastUserMsg = messages[messages.length - 1].content;
 
-   // Image generation — proxy through backend to avoid CORS
+    // Image generation — proxy through backend
     const IMG_CHECK = /generate|create|draw|make|show me|image of|picture of|paint|illustrate/i;
     if (IMG_CHECK.test(lastUserMsg)) {
       const clean = lastUserMsg.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|hey aki|aki|please|can you|for me/gi, '').trim();
       const seed = Math.floor(Math.random() * 999999);
       const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(clean)}?width=512&height=512&nologo=true&seed=${seed}&model=flux`;
-      
-      // Fetch image on server side to verify it works
       try {
         const imgCheck = await fetch(imgUrl);
-        if (imgCheck.ok) {
-          return res.status(200).json({ text: '🎨 Here you go!', image: imgUrl });
-        }
+        if (imgCheck.ok) return res.status(200).json({ text: '🎨 Here you go!', image: imgUrl });
       } catch(e) {}
       return res.status(200).json({ text: '❌ Image generation failed. Try again!' });
     }
+
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -33,9 +30,10 @@ export default async function handler(req, res) {
     const timeStr = now.toLocaleTimeString('en-IN', {
       hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
     });
+
     let searchContext = '';
     const needsSearch = /news|today|latest|current|price|weather|score|trending|who is|what is|when|how much|stock|cricket|ipl|match|update|recently|2025|2026|live/i.test(lastUserMsg);
-    if (needsSearch) {
+    if (needsSearch && process.env.SERPER_API_KEY) {
       try {
         const serperRes = await fetch('https://google.serper.dev/search', {
           method: 'POST',
@@ -56,6 +54,7 @@ export default async function handler(req, res) {
         if (parts.length) searchContext = '\n\nWeb search results:\n' + parts.join('\n');
       } catch(e) {}
     }
+
     const systemMessages = [
       {
         role: 'user',
@@ -66,24 +65,32 @@ export default async function handler(req, res) {
         content: 'Understood. I am Aki, an AI assistant created by Aaradhy Bhatkar. I know today\'s date, time, and have real-time web access. I\'ll answer everything accurately.'
       }
     ];
+
     const allMessages = [...systemMessages, ...messages];
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'perplexity/sonar',
-        messages: allMessages,
-        max_tokens: 1500
-      })
-    });
-    const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content;
+
+    // Try primary model, fall back to backup if it fails
+    let text = null;
+    const models = ['openai/gpt-4o-mini', 'openai/gpt-3.5-turbo'];
+    
+    for (const model of models) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
+          },
+          body: JSON.stringify({ model, messages: allMessages, max_tokens: 1500 })
+        });
+        const data = await response.json();
+        text = data?.choices?.[0]?.message?.content;
+        if (text) break;
+      } catch(e) { continue; }
+    }
+
     if (!text) return res.status(500).json({ error: 'AI failed' });
     return res.status(200).json({ text });
   } catch(err) {
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
