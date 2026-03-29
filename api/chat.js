@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const lastUserMsg = messages[messages.length - 1].content;
 
     // Image generation
-    const IMG_CHECK = /generate|create|draw|make|show me|image of|picture of|paint|illustrate/i;
+    const IMG_CHECK = /\bgenerate\b|\bdraw\b|\bpaint\b|\billustrate\b|image of|picture of|create an image|make an image|show me an image/i;
     if (IMG_CHECK.test(lastUserMsg)) {
       const clean = lastUserMsg.replace(/generate|create|draw|make|show me|image of|picture of|paint|illustrate|hey aki|aki|please|can you|for me/gi, '').trim();
       const seed = Math.floor(Math.random() * 999999);
