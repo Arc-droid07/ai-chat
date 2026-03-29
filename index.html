@@ -38,7 +38,7 @@
   .aki-logo.lg{width:72px;height:72px;font-size:32px;border-radius:22px;box-shadow:0 8px 32px rgba(212,168,32,0.4);animation:wFloat 5s ease-in-out infinite;}
   @keyframes wFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 
-  /* ── AUTH ── */
+  /* AUTH */
   #auth-page{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
   .auth-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:32px 28px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:20px;}
   .auth-header{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;}
@@ -64,12 +64,12 @@
   .auth-success{padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;font-size:13px;color:#16a34a;display:none;text-align:center;}
   .auth-success.show{display:block;}
 
-  /* ── APP ── */
+  /* APP */
   #app{display:none;height:100dvh;}
   #app.visible{display:flex;}
   #layout{display:flex;height:100dvh;width:100%;}
 
-  /* ── SIDEBAR ── */
+  /* SIDEBAR */
   #sidebar{width:280px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1),background 0.3s;box-shadow:var(--shadow-lg);}
   #sidebar.open{transform:translateX(0);}
   .sidebar-top{padding:calc(20px + env(safe-area-inset-top,0px)) 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -82,7 +82,6 @@
   .user-name{font-size:13px;font-weight:500;color:var(--text);}
   .user-handle{font-size:11px;color:var(--text3);margin-top:1px;}
 
-  /* Sidebar nav tabs */
   .sidebar-nav{display:flex;padding:10px 12px;gap:4px;border-bottom:1px solid var(--border);}
   .nav-tab{flex:1;padding:8px 4px;border-radius:9px;border:none;background:transparent;color:var(--text3);font-family:'Geist',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;text-align:center;}
   .nav-tab.active{background:var(--accent-light);color:var(--text);}
@@ -132,7 +131,6 @@
   .memory-del{font-size:12px;color:var(--text3);cursor:pointer;flex-shrink:0;}
   .memory-del:hover{color:#dc2626;}
 
-  /* Notifications badge */
   .notif-badge{background:#e8c840;color:#1a1a1a;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;}
 
   /* Settings */
@@ -148,14 +146,14 @@
   .toggle.on::after{transform:translateX(20px);}
   .signout-btn{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(220,38,38,0.2);background:transparent;color:#dc2626;font-family:'Geist',sans-serif;font-size:13px;cursor:pointer;}
 
-  /* ── OVERLAY ── */
+  /* OVERLAY */
   #overlay{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);display:none;}
   #overlay.show{display:block;}
 
-  /* ── MAIN ── */
+  /* MAIN */
   #main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg);}
 
-  /* ── HEADER ── */
+  /* HEADER */
   #header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 14px;background:var(--header-bg);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);flex-shrink:0;}
   .hleft{display:flex;align-items:center;gap:12px;}
   .menu-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all 0.15s;box-shadow:var(--shadow-sm);}
@@ -170,12 +168,11 @@
   .hbtn:active{transform:scale(0.93);}
   .hbtn .badge{position:absolute;top:-4px;right:-4px;background:#e8c840;color:#1a1a1a;border-radius:100px;font-size:9px;font-weight:700;padding:1px 5px;}
 
-  /* ── CHAT ── */
+  /* CHAT */
   #chat{flex:1;overflow-y:auto;padding:24px 16px 16px;display:flex;flex-direction:column;gap:20px;-webkit-overflow-scrolling:touch;}
   #chat::-webkit-scrollbar{width:3px;}
   #chat::-webkit-scrollbar-thumb{background:var(--surface3);}
 
-  /* Welcome */
   #welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;padding:40px 24px;gap:18px;}
   .w-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:500;letter-spacing:-0.03em;color:var(--text);}
   .w-title em{font-style:italic;}
@@ -186,7 +183,6 @@
   .chip:hover{background:var(--accent);color:var(--user-text);border-color:var(--accent);}
   .chip:active{transform:scale(0.95);}
 
-  /* Messages */
   .msg{display:flex;gap:10px;animation:msgIn 0.28s cubic-bezier(0.34,1.1,0.64,1);}
   .msg.user{flex-direction:row-reverse;}
   @keyframes msgIn{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -209,21 +205,19 @@
   .msg.user .bubble code{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:white;}
   .model-tag{font-size:10px;color:var(--text3);padding-left:4px;}
 
-  /* Thinking */
   .thinking-wrap{display:flex;gap:10px;}
   .thinking{display:flex;gap:5px;padding:13px 16px;background:var(--ai-bg);border:1px solid var(--border);border-radius:18px;border-bottom-left-radius:5px;align-items:center;box-shadow:var(--shadow-sm);}
   .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:dotBounce 1.3s infinite ease-in-out;}
   .dot:nth-child(2){animation-delay:0.16s}.dot:nth-child(3){animation-delay:0.32s}
   @keyframes dotBounce{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-6px);opacity:1;background:#e8c840}}
 
-  /* ── INPUT ── */
+  /* INPUT */
   #input-area{padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:var(--input-bg);backdrop-filter:blur(16px);border-top:1px solid var(--border);flex-shrink:0;}
   .input-wrap{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:8px 8px 8px 14px;box-shadow:var(--shadow);transition:border-color 0.2s,box-shadow 0.2s;}
   .input-wrap:focus-within{border-color:#e8c840;box-shadow:0 0 0 3px rgba(232,200,64,0.1),var(--shadow);}
   #inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Geist',sans-serif;font-size:15px;font-weight:300;line-height:1.5;resize:none;max-height:130px;min-height:24px;padding:0;}
   #inp::placeholder{color:var(--text3);}
 
-  /* Voice button */
   #voice-btn{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;font-size:16px;}
   #voice-btn.listening{background:#fee2e2;border-color:#fca5a5;color:#dc2626;animation:voicePulse 1s infinite;}
   @keyframes voicePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
@@ -232,7 +226,7 @@
   #sendbtn:active{transform:scale(0.88);}
   #sendbtn:disabled{background:var(--surface3);color:var(--text3);cursor:default;transform:none;box-shadow:none;}
 
-  /* ── MODALS ── */
+  /* MODALS */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center;}
   .modal-overlay.show{display:flex;}
   .modal{background:var(--surface);border-radius:24px 24px 0 0;border-top:1px solid var(--border2);padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:16px;animation:slideUp 0.3s ease-out;max-height:80dvh;overflow-y:auto;}
@@ -244,7 +238,6 @@
   .modal-btn{width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:var(--user-text);font-family:'Geist',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
   .modal-btn-sec{width:100%;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-family:'Geist',sans-serif;font-size:14px;cursor:pointer;}
 
-  /* Notification item */
   .notif-item{padding:12px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
   .notif-from{font-size:11px;color:#e8c840;font-weight:600;}
   .notif-content{font-size:14px;color:var(--text);}
@@ -254,11 +247,9 @@
   .notif-action-btn.done{background:var(--accent-light);color:var(--text);}
   .notif-action-btn.dismiss{background:transparent;color:var(--text3);}
 
-  /* Toast */
   #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--accent);color:var(--user-text);padding:9px 20px;border-radius:100px;font-size:13px;opacity:0;transition:all 0.22s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:var(--shadow);}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  /* Loading */
   .spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:#e8c840;border-radius:50%;animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
   #loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:300;}
@@ -274,7 +265,6 @@
   <div class="spinner"></div>
 </div>
 
-<!-- Auth -->
 <div id="auth-page" style="display:none">
   <div class="auth-card">
     <div class="auth-header">
@@ -315,12 +305,9 @@
   </div>
 </div>
 
-<!-- App -->
 <div id="app">
   <div id="overlay" onclick="closeSidebar()"></div>
   <div id="layout">
-
-    <!-- Sidebar -->
     <div id="sidebar">
       <div class="sidebar-top">
         <div class="sidebar-brand">
@@ -338,20 +325,17 @@
         </div>
       </div>
 
-      <!-- Nav tabs -->
       <div class="sidebar-nav">
         <button class="nav-tab active" onclick="switchNav('chats')">💬 Chats</button>
         <button class="nav-tab" onclick="switchNav('network')">🔗 Network</button>
         <button class="nav-tab" onclick="switchNav('memory')">🧠 Memory</button>
       </div>
 
-      <!-- Chats panel -->
       <div class="nav-panel active" id="panel-chats" style="flex-direction:column;">
         <button class="new-chat-btn" onclick="newChat()">+ New conversation</button>
         <div id="chat-list"></div>
       </div>
 
-      <!-- Network panel -->
       <div class="nav-panel" id="panel-network">
         <div class="network-section">
           <div class="network-title">Your Aki ID</div>
@@ -360,19 +344,16 @@
             <div class="aki-id-value" id="my-aki-id">—</div>
             <div class="aki-id-copy" onclick="copyAkiId()">📋 Copy ID</div>
           </div>
-
           <div class="network-title">Add Friend</div>
           <div class="add-friend-row">
             <input class="add-friend-input" id="add-friend-input" placeholder="Enter their @username">
             <button class="add-friend-btn" onclick="addFriend()">Add</button>
           </div>
-
           <div class="network-title">Friends</div>
           <div id="friends-list"><div class="no-chats">No friends yet.<br>Add by @username above.</div></div>
         </div>
       </div>
 
-      <!-- Memory panel -->
       <div class="nav-panel" id="panel-memory">
         <div class="network-section">
           <div class="network-title">What Aki knows about you</div>
@@ -380,7 +361,6 @@
         </div>
       </div>
 
-      <!-- Settings -->
       <div class="sidebar-bottom">
         <div class="setting-row">
           <div class="setting-left">
@@ -406,7 +386,6 @@
       </div>
     </div>
 
-    <!-- Main -->
     <div id="main">
       <div id="header">
         <div class="hleft">
@@ -443,7 +422,6 @@
   </div>
 </div>
 
-<!-- Notifications Modal -->
 <div class="modal-overlay" id="notif-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -453,7 +431,6 @@
   </div>
 </div>
 
-<!-- Send to Friend Modal -->
 <div class="modal-overlay" id="send-friend-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -464,7 +441,6 @@
       <option value="task">✅ Task</option>
     </select>
     <textarea class="modal-input" id="send-content" rows="3" placeholder="What do you want to send?"></textarea>
-    <input class="modal-input" id="send-time" type="datetime-local" style="display:none">
     <button class="modal-btn" onclick="sendToFriend()">Send via Aki</button>
     <button class="modal-btn-sec" onclick="closeModal('send-friend-modal')">Cancel</button>
   </div>
@@ -473,25 +449,29 @@
 <div id="toast"></div>
 
 <script>
-// ══════════════════════════
-// CONFIG — your keys are already here
-// ══════════════════════════
 const SUPABASE_URL = 'https://ipykuhdyoodgfeastott.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlweWt1aGR5b29kZ2ZlYXN0b3R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjA3OTYsImV4cCI6MjA5MDI5Njc5Nn0.1Bt1DlQgrW1DG_kSApGZMo8qzRpIoE7wUoMv7XUbTFA';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const API_URL = '/api/chat';
 
-// ── STATE ──
 let currentUser = null, currentChatId = null;
 let chats = [], friends = [], memories = [], notifications = [];
 let busy = false, darkMode = false, largeFont = false;
 let isListening = false, recognition = null;
 let sendToFriendId = null;
 
-// ══════════════════════════
-// INIT
-// ══════════════════════════
+// ── FIX 2: Reset busy flag when tab becomes visible again ──
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && busy) {
+    busy = false;
+    document.getElementById('sendbtn').disabled = false;
+    setStatus('ready');
+    // Remove any stuck thinking indicators
+    document.querySelectorAll('.thinking-wrap').forEach(el => el.remove());
+  }
+});
+
 async function init() {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -504,7 +484,6 @@ async function init() {
     else if (event === 'SIGNED_OUT') showAuthPage();
   });
 
-  // Setup voice
   setupVoice();
 }
 
@@ -519,13 +498,11 @@ async function onSignedIn(user) {
   document.getElementById('user-name').textContent = name;
   document.getElementById('user-avatar').textContent = name[0].toUpperCase();
 
-  // Load username
   const { data: uname } = await sb.from('aki_usernames').select('username').eq('user_id', user.id).single();
   const handle = uname?.username || 'set username';
   document.getElementById('user-handle').textContent = '@' + handle;
   document.getElementById('my-aki-id').textContent = '@' + handle;
 
-  // Load settings
   const { data: settings } = await sb.from('settings').select('*').eq('user_id', user.id).single();
   if (settings) { darkMode = settings.dark_mode || false; largeFont = settings.large_font || false; }
   applyTheme(false); applyFont(false);
@@ -535,7 +512,6 @@ async function onSignedIn(user) {
   await loadMemories();
   await loadNotifications();
 
-  // Real-time notifications
   sb.channel('network_messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'network_messages', filter: `to_user_id=eq.${user.id}` },
       (payload) => { notifications.unshift(payload.new); updateNotifBadge(); toast('📨 New message from a friend\'s Aki!'); })
@@ -548,9 +524,6 @@ function showAuthPage() {
   document.getElementById('app').classList.remove('visible');
 }
 
-// ══════════════════════════
-// AUTH
-// ══════════════════════════
 let authMode = 'login';
 
 function switchAuthTab(mode) {
@@ -587,7 +560,6 @@ async function handleAuth() {
     } else {
       const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name: name || email.split('@')[0] } } });
       if (error) throw error;
-      // Save username if provided
       if (username && data?.user) {
         await sb.from('aki_usernames').insert({ user_id: data.user.id, username }).catch(() => {});
       }
@@ -605,9 +577,6 @@ async function signInWithGoogle() { await sb.auth.signInWithOAuth({ provider: 'g
 async function signOut() { await sb.auth.signOut(); chats = []; friends = []; memories = []; currentUser = null; closeSidebar(); }
 function showAuthError(msg) { const el = document.getElementById('auth-error'); el.textContent = msg; el.classList.add('show'); }
 
-// ══════════════════════════
-// CHATS
-// ══════════════════════════
 async function loadChats() {
   const { data } = await sb.from('chats').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false });
   chats = data || [];
@@ -673,9 +642,6 @@ function renderMessages(messages) {
   scrollDown();
 }
 
-// ══════════════════════════
-// SEND MESSAGE
-// ══════════════════════════
 function q(text) { document.getElementById('inp').value = text; send(); }
 function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
 function resize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 130) + 'px'; }
@@ -705,17 +671,14 @@ async function send() {
   setStatus('thinking');
   const thinkEl = addThinking();
 
-  // Get history + memories for context
   const { data: history } = await sb.from('messages').select('role, content').eq('chat_id', currentChatId).order('created_at', { ascending: true });
   const { data: notifMessages } = await sb.from('network_messages').select('*').eq('to_user_id', currentUser.id).eq('is_read', false);
 
-  // Build memory context
   let memoryContext = '';
   if (memories.length > 0) {
     memoryContext = '\n\nWhat you know about this user:\n' + memories.map(m => `- ${m.fact}`).join('\n');
   }
 
-  // Build pending notifications context
   let notifContext = '';
   if (notifMessages?.length > 0) {
     notifContext = '\n\nPending messages from friends:\n' + notifMessages.map(n => `- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
@@ -737,11 +700,7 @@ async function send() {
 
     addBubble('ai', data.text, data.model, true);
     setStatus('ready');
-
-    // Auto extract memories from conversation
     extractMemories(text, data.text);
-
-    // Check if AI set a reminder
     checkForReminders(text, data.text);
 
   } catch(err) {
@@ -755,9 +714,6 @@ async function send() {
   scrollDown();
 }
 
-// ══════════════════════════
-// MEMORY SYSTEM
-// ══════════════════════════
 async function loadMemories() {
   const { data } = await sb.from('memories').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   memories = data || [];
@@ -782,7 +738,6 @@ async function deleteMemory(id) {
 }
 
 async function extractMemories(userMsg, aiMsg) {
-  // Simple keyword-based memory extraction
   const text = userMsg.toLowerCase();
   const facts = [];
 
@@ -806,9 +761,7 @@ async function extractMemories(userMsg, aiMsg) {
     facts.push({ category: 'personal', fact: `User's work: "${userMsg.substring(0, 80)}"` });
   }
 
-  // Save new memories
   for (const fact of facts) {
-    // Avoid duplicates
     const exists = memories.some(m => m.fact === fact.fact);
     if (!exists) {
       const { data } = await sb.from('memories').insert({ user_id: currentUser.id, ...fact }).select().single();
@@ -819,27 +772,18 @@ async function extractMemories(userMsg, aiMsg) {
 }
 
 async function checkForReminders(userMsg, aiMsg) {
-  // Check if user asked to set a reminder
   const text = userMsg.toLowerCase();
   if (text.includes('remind') || text.includes('reminder') || text.includes('remember to') || text.includes('set alarm')) {
-    // Extract time - simple pattern matching
     const timeMatch = userMsg.match(/(\d{1,2})(:\d{2})?\s*(am|pm)/i) || userMsg.match(/at (\d{1,2})/i);
-    if (timeMatch) {
-      const now = new Date();
-      toast('⏰ Reminder noted by Aki!');
-    }
+    if (timeMatch) toast('⏰ Reminder noted by Aki!');
   }
 }
 
-// ══════════════════════════
-// AKI NETWORK
-// ══════════════════════════
 async function loadFriends() {
   const { data } = await sb.from('aki_network')
     .select('*, friend:friend_id(id, email)')
     .eq('user_id', currentUser.id)
     .eq('status', 'accepted');
-
   friends = data || [];
   renderFriends();
 }
@@ -869,8 +813,6 @@ async function addFriend() {
 
   const { error } = await sb.from('aki_network').insert({ user_id: currentUser.id, friend_id: udata.user_id, status: 'accepted' });
   if (error) { toast('❌ Already added or error'); return; }
-
-  // Add reverse connection
   await sb.from('aki_network').insert({ user_id: udata.user_id, friend_id: currentUser.id, status: 'accepted' }).catch(() => {});
 
   input.value = '';
@@ -902,21 +844,16 @@ async function sendToFriend() {
   });
 
   if (error) { toast('❌ Failed to send'); return; }
-
   closeModal('send-friend-modal');
   toast('✓ Sent to friend\'s Aki!');
 }
 
-// ══════════════════════════
-// NOTIFICATIONS
-// ══════════════════════════
 async function loadNotifications() {
   const { data } = await sb.from('network_messages')
     .select('*')
     .eq('to_user_id', currentUser.id)
     .eq('is_read', false)
     .order('created_at', { ascending: false });
-
   notifications = data || [];
   updateNotifBadge();
 }
@@ -962,9 +899,6 @@ async function dismissNotif(id) {
   updateNotifBadge(); openNotifications();
 }
 
-// ══════════════════════════
-// VOICE
-// ══════════════════════════
 function setupVoice() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) { document.getElementById('voice-btn').style.display = 'none'; return; }
@@ -1008,7 +942,6 @@ function stopListening() {
   try { recognition.stop(); } catch(e) {}
 }
 
-// Text to speech
 function speak(text) {
   if (!window.speechSynthesis) return;
   const clean = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '').substring(0, 300);
@@ -1018,9 +951,6 @@ function speak(text) {
   window.speechSynthesis.speak(utt);
 }
 
-// ══════════════════════════
-// SETTINGS
-// ══════════════════════════
 async function toggleTheme() {
   darkMode = !darkMode; applyTheme(true);
   await sb.from('settings').upsert({ user_id: currentUser.id, dark_mode: darkMode });
@@ -1048,9 +978,6 @@ function applyFont(animate) {
   if (animate) toast(largeFont ? 'Aa Large text' : 'Aa Medium text');
 }
 
-// ══════════════════════════
-// UI HELPERS
-// ══════════════════════════
 function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 function openModal(id) { document.getElementById(id).classList.add('show'); }
@@ -1138,7 +1065,6 @@ if (window.visualViewport) {
   });
 }
 
-// Close modals on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', (e) => { if (e.target === el) el.classList.remove('show'); });
 });
