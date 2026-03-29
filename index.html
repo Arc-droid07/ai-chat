@@ -34,10 +34,10 @@
   .field-input{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-family:'Geist',sans-serif;font-size:15px;font-weight:300;outline:none;transition:all 0.2s;}
   .field-input:focus{border-color:#e8c840;box-shadow:0 0 0 3px rgba(232,200,64,0.1);}
   .field-input::placeholder{color:var(--text3);}
-  .auth-btn{width:100%;padding:14px;background:#e8c840;color:#1a1a1a !important;;border:none;border-radius:14px;color:var(--user-text);font-family:'Geist',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.2s;}
-  .auth-btn:active{transform:scale(0.98);}
+  .auth-btn{width:100%;padding:14px;background:#e8c840;border:none;border-radius:14px;color:#1a1a1a !important;font-family:'Geist',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .auth-btn:active{transform:scale(0.98);background:#d4a820;}
   .auth-btn:disabled{opacity:0.6;cursor:default;}
-  .auth-btn.google{background:var(--surface2);color:var(--text);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:8px;}
+  .auth-btn.google{background:var(--surface2);color:var(--text) !important;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;}
   .auth-divider{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text3);}
   .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
   .auth-error{padding:10px 14px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);border-radius:10px;font-size:13px;color:#dc2626;display:none;}
@@ -62,11 +62,8 @@
   .nav-tab.active{background:var(--accent-light);color:var(--text);}
   .nav-panel{display:none;flex:1;overflow-y:auto;flex-direction:column;}
   .nav-panel.active{display:flex;}
-
-  /* FIX 1: New chat button always gold, never white */
   .new-chat-btn{margin:12px;padding:11px 16px;background:#e8c840 !important;border:none;border-radius:12px;color:#1a1a1a !important;font-family:'Geist',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;}
   .new-chat-btn:active{background:#d4a820 !important;transform:scale(0.98);}
-
   #chat-list{flex:1;overflow-y:auto;padding:4px 10px 8px;}
   #chat-list::-webkit-scrollbar{width:2px;}
   #chat-list::-webkit-scrollbar-thumb{background:var(--surface3);}
@@ -182,7 +179,7 @@
   .modal-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:500;color:var(--text);}
   .modal-input{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-family:'Geist',sans-serif;font-size:15px;outline:none;}
   .modal-input:focus{border-color:#e8c840;}
-  .modal-btn{width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:var(--user-text);font-family:'Geist',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
+  .modal-btn{width:100%;padding:13px;background:#e8c840;border:none;border-radius:12px;color:#1a1a1a;font-family:'Geist',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
   .modal-btn-sec{width:100%;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-family:'Geist',sans-serif;font-size:14px;cursor:pointer;}
   .notif-item{padding:12px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
   .notif-from{font-size:11px;color:#e8c840;font-weight:600;}
@@ -192,7 +189,7 @@
   .notif-action-btn{padding:5px 12px;border-radius:8px;border:none;font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;}
   .notif-action-btn.done{background:var(--accent-light);color:var(--text);}
   .notif-action-btn.dismiss{background:transparent;color:var(--text3);}
-  #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--accent);color:var(--user-text);padding:9px 20px;border-radius:100px;font-size:13px;opacity:0;transition:all 0.22s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:var(--shadow);}
+  #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:#e8c840;color:#1a1a1a;padding:9px 20px;border-radius:100px;font-size:13px;font-weight:600;opacity:0;transition:all 0.22s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:var(--shadow);}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:#e8c840;border-radius:50%;animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -388,20 +385,10 @@ const API_URL='/api/chat';
 
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
-let busy=false,darkMode=true,largeFont=false;
+let busy=false,darkMode=true,largeFont=false,busyTimer=null;
 let isListening=false,recognition=null,sendToFriendId=null;
-let busyTimer=null; // FIX 2: timer for auto-reset
 
-// FIX 2: Reset busy when switching tabs
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&busy){resetBusy();}
-});
-
-// FIX 2: Reset busy when window gets focus
-window.addEventListener('focus',()=>{
-  if(busy){resetBusy();}
-});
-
+// ── FIX: Reset busy state on tab switch / window focus ──
 function resetBusy(){
   clearTimeout(busyTimer);
   busy=false;
@@ -410,6 +397,8 @@ function resetBusy(){
   setStatus('ready');
   document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
 }
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&busy)resetBusy();});
+window.addEventListener('focus',()=>{if(busy)resetBusy();});
 
 async function init(){
   try{const{data:{session}}=await sb.auth.getSession();if(session)await onSignedIn(session.user);else showAuthPage();}
@@ -560,7 +549,7 @@ function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHei
 async function send(){
   if(busy||!currentChatId)return;
 
-  // FIX 2: Auto-reset busy after 30 seconds max
+  // Auto-reset busy after 30s max
   clearTimeout(busyTimer);
   busyTimer=setTimeout(()=>{if(busy)resetBusy();},30000);
 
