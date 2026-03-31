@@ -420,13 +420,14 @@ function resetBusy(){
 }
 
 // Fix freeze on tab switch
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) resetBusy(); });
-window.addEventListener('focus', resetBusy);
-window.addEventListener('pageshow', resetBusy);
-document.addEventListener('click',(e)=>{ if(e.target.id==='sendbtn'&&busy) resetBusy(); });
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && busy){
+    resetBusy();
+  }
+});
 
 // Reset every 2s if stuck — nuclear option
-setInterval(()=>{ if(busy && document.getElementById('sendbtn')?.disabled) resetBusy(); }, 2000);
+
 
 async function init(){
   try{const{data:{session}}=await sb.auth.getSession();if(session)await onSignedIn(session.user);else showAuthPage();}
