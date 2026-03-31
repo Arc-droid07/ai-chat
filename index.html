@@ -407,11 +407,12 @@ const API_URL='/api/chat';
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
 let busy=false,darkMode=true,largeFont=false,busyTimer=null;
-let isListening=false,recognition=null,sendToFriendId=null;
+let isListening=false,recognition=null,sendToFriendId=null,abortController=null;
 
 function resetBusy(){
   clearTimeout(busyTimer);
   busy=false;
+  if(abortController){abortController.abort();abortController=null;}
   const btn=document.getElementById('sendbtn');
   if(btn)btn.disabled=false;
   setStatus('ready');
@@ -419,18 +420,13 @@ function resetBusy(){
 }
 
 // Fix freeze on tab switch
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden) resetBusy();
-});
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) resetBusy(); });
 window.addEventListener('focus', resetBusy);
 window.addEventListener('pageshow', resetBusy);
+document.addEventListener('click',(e)=>{ if(e.target.id==='sendbtn'&&busy) resetBusy(); });
 
-// Also reset if send button is clicked while frozen
-document.addEventListener('click',(e)=>{
-  if(e.target.id==='sendbtn'&&busy){
-    resetBusy();
-  }
-});
+// Reset every 2s if stuck — nuclear option
+setInterval(()=>{ if(busy && document.getElementById('sendbtn')?.disabled) resetBusy(); }, 2000);
 
 async function init(){
   try{const{data:{session}}=await sb.auth.getSession();if(session)await onSignedIn(session.user);else showAuthPage();}
@@ -645,7 +641,7 @@ async function send(){
   let notifContext='';
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
   try{
-    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history||[],memoryContext,notifContext})});
+    abortController=new AbortController();   const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history||[],memoryContext,notifContext}),signal:abortController.signal});
     const data=await res.json();
     thinkEl.remove();
     if(!res.ok)throw new Error(data.error||'Something went wrong');
