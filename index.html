@@ -55,8 +55,11 @@
   .close-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
   .user-strip{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
   .user-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#c8c8c0,#e8c840);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#1a1a1a;flex-shrink:0;}
+  .user-info{flex:1;min-width:0;}
   .user-name{font-size:13px;font-weight:500;color:var(--text);}
-  .user-handle{font-size:11px;color:var(--text3);margin-top:1px;}
+  .user-handle-row{display:flex;align-items:center;gap:6px;margin-top:1px;}
+  .user-handle{font-size:11px;color:var(--text3);}
+  .edit-handle-btn{font-size:10px;color:#e8c840;cursor:pointer;background:none;border:none;padding:0;font-family:'Geist',sans-serif;}
   .sidebar-nav{display:flex;padding:10px 12px;gap:4px;border-bottom:1px solid var(--border);}
   .nav-tab{flex:1;padding:8px 4px;border-radius:9px;border:none;background:transparent;color:var(--text3);font-family:'Geist',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;text-align:center;}
   .nav-tab.active{background:var(--accent-light);color:var(--text);}
@@ -222,8 +225,8 @@
         <input class="field-input" id="auth-name" type="text" placeholder="What should Aki call you?">
       </div>
       <div class="field-group" id="username-field" style="display:none">
-        <div class="field-label">Aki Username</div>
-        <input class="field-input" id="auth-username" type="text" placeholder="@yourname (for Aki Network)">
+        <div class="field-label">Aki Username (for Aki Network)</div>
+        <input class="field-input" id="auth-username" type="text" placeholder="e.g. aaradhy07">
       </div>
       <div class="field-group">
         <div class="field-label">Email</div>
@@ -258,9 +261,12 @@
       </div>
       <div class="user-strip">
         <div class="user-avatar" id="user-avatar">?</div>
-        <div>
+        <div class="user-info">
           <div class="user-name" id="user-name">Loading…</div>
-          <div class="user-handle" id="user-handle">@—</div>
+          <div class="user-handle-row">
+            <span class="user-handle" id="user-handle">@—</span>
+            <button class="edit-handle-btn" onclick="openEditUsername()">✏️ Edit</button>
+          </div>
         </div>
       </div>
       <div class="sidebar-nav">
@@ -276,7 +282,7 @@
         <div class="network-section">
           <div class="network-title">Your Aki ID</div>
           <div class="aki-id-box">
-            <div class="aki-id-label">Share this with friends</div>
+            <div class="aki-id-label">Share this with friends to connect</div>
             <div class="aki-id-value" id="my-aki-id">—</div>
             <div class="aki-id-copy" onclick="copyAkiId()">📋 Copy ID</div>
           </div>
@@ -285,7 +291,7 @@
             <input class="add-friend-input" id="add-friend-input" placeholder="Enter their @username">
             <button class="add-friend-btn" onclick="addFriend()">Add</button>
           </div>
-          <div class="network-title">Friends</div>
+          <div class="network-title">Connected Friends</div>
           <div id="friends-list"><div class="no-chats">No friends yet.<br>Add by @username above.</div></div>
         </div>
       </div>
@@ -350,6 +356,20 @@
   </div>
 </div>
 
+<!-- Edit Username Modal -->
+<div class="modal-overlay" id="username-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Aki Username</div>
+    <p style="font-size:13px;color:var(--text2);line-height:1.5;">This is how friends find you on Aki Network. Choose something unique.</p>
+    <input class="modal-input" id="new-username-input" type="text" placeholder="e.g. aaradhy07" autocomplete="off">
+    <div id="username-error" style="font-size:13px;color:#dc2626;display:none;"></div>
+    <button class="modal-btn" onclick="saveUsername()">Save Username</button>
+    <button class="modal-btn-sec" onclick="closeModal('username-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- Notifications Modal -->
 <div class="modal-overlay" id="notif-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -359,6 +379,7 @@
   </div>
 </div>
 
+<!-- Send to Friend Modal -->
 <div class="modal-overlay" id="send-friend-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -388,10 +409,8 @@ let chats=[],friends=[],memories=[],notifications=[];
 let busy=false,darkMode=true,largeFont=false,busyTimer=null;
 let isListening=false,recognition=null,sendToFriendId=null;
 
-// ── FIX: Reset busy state on tab switch / window focus ──
 function resetBusy(){
-  clearTimeout(busyTimer);
-  busy=false;
+  clearTimeout(busyTimer);busy=false;
   const btn=document.getElementById('sendbtn');
   if(btn)btn.disabled=false;
   setStatus('ready');
@@ -419,15 +438,13 @@ async function onSignedIn(user){
   const name=profile?.name||user.email.split('@')[0];
   document.getElementById('user-name').textContent=name;
   document.getElementById('user-avatar').textContent=name[0].toUpperCase();
-  const{data:uname}=await sb.from('aki_usernames').select('username').eq('user_id',user.id).single();
-  const handle=uname?.username||'set username';
-  document.getElementById('user-handle').textContent='@'+handle;
-  document.getElementById('my-aki-id').textContent='@'+handle;
+  await refreshUsername();
   const{data:settings}=await sb.from('settings').select('*').eq('user_id',user.id).single();
   if(settings){darkMode=settings.dark_mode!==false;largeFont=settings.large_font||false;}
   applyTheme(false);applyFont(false);
   await loadChats();await loadFriends();await loadMemories();await loadNotifications();
-  sb.channel('network_messages').on('postgres_changes',{event:'INSERT',schema:'public',table:'network_messages',filter:`to_user_id=eq.${user.id}`},
+  sb.channel('network_msgs_'+user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'network_messages',filter:`to_user_id=eq.${user.id}`},
     (payload)=>{notifications.unshift(payload.new);updateNotifBadge();toast('📨 New message from a friend\'s Aki!');}).subscribe();
 }
 
@@ -437,6 +454,41 @@ function showAuthPage(){
   document.getElementById('app').classList.remove('visible');
 }
 
+// ── USERNAME ──
+async function refreshUsername(){
+  const{data:uname}=await sb.from('aki_usernames').select('username').eq('user_id',currentUser.id).single();
+  const handle=uname?.username||null;
+  document.getElementById('user-handle').textContent=handle?'@'+handle:'Not set';
+  document.getElementById('my-aki-id').textContent=handle?'@'+handle:'Set a username first';
+}
+
+function openEditUsername(){
+  const current=document.getElementById('user-handle').textContent.replace('@','');
+  document.getElementById('new-username-input').value=current==='Not set'?'':current;
+  document.getElementById('username-error').style.display='none';
+  openModal('username-modal');
+}
+
+async function saveUsername(){
+  const val=document.getElementById('new-username-input').value.trim().replace('@','').toLowerCase();
+  const errEl=document.getElementById('username-error');
+  if(!val){errEl.textContent='Please enter a username';errEl.style.display='block';return;}
+  if(!/^[a-z0-9_]{3,20}$/.test(val)){errEl.textContent='3-20 chars, letters/numbers/underscore only';errEl.style.display='block';return;}
+
+  // Check if taken
+  const{data:existing}=await sb.from('aki_usernames').select('user_id').eq('username',val).single();
+  if(existing&&existing.user_id!==currentUser.id){errEl.textContent='Username already taken';errEl.style.display='block';return;}
+
+  // Upsert
+  const{error}=await sb.from('aki_usernames').upsert({user_id:currentUser.id,username:val});
+  if(error){errEl.textContent='Failed to save. Try again.';errEl.style.display='block';return;}
+
+  closeModal('username-modal');
+  await refreshUsername();
+  toast('✓ Username updated!');
+}
+
+// ── AUTH ──
 let authMode='login';
 function switchAuthTab(mode){
   authMode=mode;
@@ -461,12 +513,18 @@ async function handleAuth(){
   document.getElementById('auth-error').classList.remove('show');
   document.getElementById('auth-success').classList.remove('show');
   try{
-    if(authMode==='login'){const{error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;}
-    else{
+    if(authMode==='login'){
+      const{error}=await sb.auth.signInWithPassword({email,password});
+      if(error)throw error;
+    }else{
       const{data,error}=await sb.auth.signUp({email,password,options:{data:{name:name||email.split('@')[0]}}});
       if(error)throw error;
-      if(username&&data?.user)await sb.from('aki_usernames').insert({user_id:data.user.id,username}).catch(()=>{});
-      const s=document.getElementById('auth-success');s.textContent='✓ Account created! You can now sign in.';s.classList.add('show');
+      if(username&&data?.user){
+        await sb.from('aki_usernames').upsert({user_id:data.user.id,username}).catch(()=>{});
+      }
+      const s=document.getElementById('auth-success');
+      s.textContent='✓ Account created! You can now sign in.';
+      s.classList.add('show');
       switchAuthTab('login');
     }
   }catch(err){showAuthError(err.message);}
@@ -477,6 +535,7 @@ async function signInWithGoogle(){await sb.auth.signInWithOAuth({provider:'googl
 async function signOut(){await sb.auth.signOut();chats=[];friends=[];memories=[];currentUser=null;closeSidebar();}
 function showAuthError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show');}
 
+// ── CHATS ──
 async function loadChats(){
   const{data}=await sb.from('chats').select('*').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
   chats=data||[];renderList();
@@ -525,7 +584,7 @@ function renderMessages(messages){
       <div class="w-divider"></div>
       <div class="w-chips">
         <div class="chip" onclick="q('What do you remember about me?')">What do you know about me?</div>
-        <div class="chip" onclick="q('Set a reminder for tomorrow at 9am')">Set a reminder</div>
+        <div class="chip" onclick="q('Draw me a picture of a sunset')">Generate an image</div>
         <div class="chip" onclick="q('What can you do?')">What can you do?</div>
         <div class="chip" onclick="q('Give me a business idea')">Business idea</div>
         <div class="chip" onclick="q('Who created you?')">Who made you?</div>
@@ -542,17 +601,15 @@ function renderMessages(messages){
   scrollDown();
 }
 
+// ── SEND ──
 function q(text){document.getElementById('inp').value=text;send();}
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
 
 async function send(){
   if(busy||!currentChatId)return;
-
-  // Auto-reset busy after 30s max
   clearTimeout(busyTimer);
   busyTimer=setTimeout(()=>{if(busy)resetBusy();},30000);
-
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
   if(!text)return;
@@ -589,14 +646,12 @@ async function send(){
     await sb.from('chats').update({updated_at:new Date().toISOString()}).eq('id',currentChatId);
     setStatus('ready');
     extractMemories(text,data.text);
-    checkForReminders(text,data.text);
   }catch(err){
     thinkEl.remove();
     addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true);
     setStatus('ready');
   }
-  busy=false;
-  clearTimeout(busyTimer);
+  busy=false;clearTimeout(busyTimer);
   document.getElementById('sendbtn').disabled=false;
   scrollDown();
 }
@@ -611,12 +666,13 @@ function addImageBubble(imgUrl,animate){
     <div class="bubble-wrap">
       <div class="bubble" style="padding:10px;">
         <p style="margin-bottom:8px;font-size:14px;">🎨 Here you go!</p>
-        <img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p>❌ Image failed. Try again.</p>'">
+        <img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--text2);font-size:13px;\\'>❌ Image service unavailable. Try again later.</p>'">
       </div>
     </div>`;
   chat.appendChild(outer);scrollDown();
 }
 
+// ── MEMORY ──
 async function loadMemories(){
   const{data}=await sb.from('memories').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
   memories=data||[];renderMemories();
@@ -644,11 +700,11 @@ async function extractMemories(userMsg,aiMsg){
     const match=userMsg.match(/(?:my name is|i'm|i am) ([A-Z][a-z]+)/i);
     if(match)facts.push({category:'personal',fact:`User's name is ${match[1]}`});
   }
-  if(text.includes('i study')||text.includes('college')||text.includes('university'))facts.push({category:'personal',fact:`User is a student: "${userMsg.substring(0,80)}"`});
-  if(text.includes('i like')||text.includes('i love')||text.includes('i enjoy'))facts.push({category:'preferences',fact:`User mentioned: "${userMsg.substring(0,80)}"`});
-  if(text.includes('i want to')||text.includes('my goal')||text.includes('i plan to'))facts.push({category:'goals',fact:`User's goal: "${userMsg.substring(0,80)}"`});
-  if(text.includes('every day')||text.includes('every morning')||text.includes('i usually'))facts.push({category:'habits',fact:`User's habit: "${userMsg.substring(0,80)}"`});
-  if(text.includes('i work')||text.includes('my job'))facts.push({category:'personal',fact:`User's work: "${userMsg.substring(0,80)}"`});
+  if(text.includes('i study')||text.includes('college')||text.includes('university'))facts.push({category:'personal',fact:`Student: "${userMsg.substring(0,80)}"`});
+  if(text.includes('i like')||text.includes('i love')||text.includes('i enjoy'))facts.push({category:'preferences',fact:`Likes: "${userMsg.substring(0,80)}"`});
+  if(text.includes('i want to')||text.includes('my goal')||text.includes('i plan to'))facts.push({category:'goals',fact:`Goal: "${userMsg.substring(0,80)}"`});
+  if(text.includes('every day')||text.includes('every morning')||text.includes('i usually'))facts.push({category:'habits',fact:`Habit: "${userMsg.substring(0,80)}"`});
+  if(text.includes('i work')||text.includes('my job'))facts.push({category:'personal',fact:`Work: "${userMsg.substring(0,80)}"`});
   for(const fact of facts){
     const exists=memories.some(m=>m.fact===fact.fact);
     if(!exists){const{data}=await sb.from('memories').insert({user_id:currentUser.id,...fact}).select().single();if(data)memories.unshift(data);}
@@ -656,17 +712,40 @@ async function extractMemories(userMsg,aiMsg){
   if(facts.length>0)renderMemories();
 }
 
-async function checkForReminders(userMsg,aiMsg){
-  const text=userMsg.toLowerCase();
-  if(text.includes('remind')||text.includes('reminder')){
-    const timeMatch=userMsg.match(/(\d{1,2})(:\d{2})?\s*(am|pm)/i)||userMsg.match(/at (\d{1,2})/i);
-    if(timeMatch)toast('⏰ Reminder noted by Aki!');
-  }
-}
-
+// ── AKI NETWORK (FIXED) ──
 async function loadFriends(){
-  const{data}=await sb.from('aki_network').select('*, friend:friend_id(id,email)').eq('user_id',currentUser.id).eq('status','accepted');
-  friends=data||[];renderFriends();
+  // Get all accepted connections where I am the user
+  const{data}=await sb.from('aki_network')
+    .select('friend_id, status')
+    .eq('user_id',currentUser.id)
+    .eq('status','accepted');
+
+  if(!data||!data.length){friends=[];renderFriends();return;}
+
+  // Get usernames for all friends
+  const friendIds=data.map(f=>f.friend_id);
+  const{data:usernames}=await sb.from('aki_usernames')
+    .select('user_id, username')
+    .in('user_id',friendIds);
+
+  // Get profiles
+  const{data:profiles}=await sb.from('profiles')
+    .select('id, name, email')
+    .in('id',friendIds);
+
+  // Combine
+  friends=data.map(f=>{
+    const uname=usernames?.find(u=>u.user_id===f.friend_id);
+    const profile=profiles?.find(p=>p.id===f.friend_id);
+    return{
+      friend_id:f.friend_id,
+      username:uname?.username||null,
+      name:profile?.name||profile?.email?.split('@')[0]||'Friend',
+      email:profile?.email||''
+    };
+  });
+
+  renderFriends();
 }
 
 function renderFriends(){
@@ -674,26 +753,43 @@ function renderFriends(){
   if(!friends.length){list.innerHTML='<div class="no-chats">No friends yet.<br>Add by @username above.</div>';return;}
   list.innerHTML=friends.map(f=>`
     <div class="friend-item">
-      <div class="friend-avatar">${f.friend?.email?.[0]?.toUpperCase()||'?'}</div>
-      <div><div class="friend-name">${f.friend?.email?.split('@')[0]||'Friend'}</div><div class="friend-handle">Connected</div></div>
-      <button class="friend-msg-btn" onclick="openSendToFriend('${f.friend_id}','${f.friend?.email?.split('@')[0]}')">Send</button>
+      <div class="friend-avatar">${f.name[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="friend-name">${f.name}</div>
+        <div class="friend-handle">${f.username?'@'+f.username:'No username set'}</div>
+      </div>
+      <button class="friend-msg-btn" onclick="openSendToFriend('${f.friend_id}','${f.name}')">Send</button>
     </div>`).join('');
 }
 
 async function addFriend(){
   const input=document.getElementById('add-friend-input');
   const username=input.value.trim().replace('@','').toLowerCase();
-  if(!username)return;
-  const{data:udata}=await sb.from('aki_usernames').select('user_id').eq('username',username).single();
-  if(!udata){toast('❌ User not found');return;}
-  if(udata.user_id===currentUser.id){toast('❌ That\'s you!');return;}
+  if(!username){toast('Enter a username');return;}
+
+  const{data:udata,error:uerr}=await sb.from('aki_usernames').select('user_id').eq('username',username).single();
+  if(uerr||!udata){toast('❌ User @'+username+' not found');return;}
+  if(udata.user_id===currentUser.id){toast('❌ That\'s your own username!');return;}
+
+  // Check if already friends
+  const{data:existing}=await sb.from('aki_network').select('id').eq('user_id',currentUser.id).eq('friend_id',udata.user_id).single();
+  if(existing){toast('⚠ Already connected!');return;}
+
+  // Add both directions
   const{error}=await sb.from('aki_network').insert({user_id:currentUser.id,friend_id:udata.user_id,status:'accepted'});
-  if(error){toast('❌ Already added or error');return;}
+  if(error){toast('❌ Error adding friend');return;}
   await sb.from('aki_network').insert({user_id:udata.user_id,friend_id:currentUser.id,status:'accepted'}).catch(()=>{});
-  input.value='';await loadFriends();toast('✓ Friend added to Aki Network!');
+
+  input.value='';
+  await loadFriends();
+  toast('✓ Connected with @'+username+'!');
 }
 
-function copyAkiId(){navigator.clipboard.writeText(document.getElementById('my-aki-id').textContent).then(()=>toast('✓ Aki ID copied!'));}
+function copyAkiId(){
+  const id=document.getElementById('my-aki-id').textContent;
+  if(id==='Set a username first'){toast('Set a username first!');openEditUsername();return;}
+  navigator.clipboard.writeText(id).then(()=>toast('✓ Aki ID copied!'));
+}
 
 function openSendToFriend(friendId,name){
   sendToFriendId=friendId;
@@ -711,6 +807,7 @@ async function sendToFriend(){
   closeModal('send-friend-modal');toast('✓ Sent to friend\'s Aki!');
 }
 
+// ── NOTIFICATIONS ──
 async function loadNotifications(){
   const{data}=await sb.from('network_messages').select('*').eq('to_user_id',currentUser.id).eq('is_read',false).order('created_at',{ascending:false});
   notifications=data||[];updateNotifBadge();
@@ -747,6 +844,7 @@ async function dismissNotif(id){
   notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();
 }
 
+// ── VOICE ──
 function setupVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){document.getElementById('voice-btn').style.display='none';return;}
@@ -765,6 +863,7 @@ function stopListening(){
   try{recognition.stop();}catch(e){}
 }
 
+// ── SETTINGS ──
 async function toggleTheme(){darkMode=!darkMode;applyTheme(true);await sb.from('settings').upsert({user_id:currentUser.id,dark_mode:darkMode});}
 function applyTheme(animate){
   document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
@@ -783,6 +882,7 @@ function applyFont(animate){
   if(animate)toast(largeFont?'Aa Large text':'Aa Medium text');
 }
 
+// ── UI ──
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 function openModal(id){document.getElementById(id).classList.add('show');}
