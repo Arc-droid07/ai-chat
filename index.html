@@ -407,26 +407,21 @@ const API_URL='/api/chat';
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
 let busy=false,darkMode=true,largeFont=false,busyTimer=null;
-let isListening=false,recognition=null,sendToFriendId=null,abortController=null;
+let isListening=false,recognition=null,sendToFriendId=null;
 
 function resetBusy(){
   clearTimeout(busyTimer);
-  busy=false;
-  if(abortController){abortController.abort();abortController=null;}
-  const btn=document.getElementById('sendbtn');
-  if(btn)btn.disabled=false;
+  busy = false;
+  abortController = null;
+  const btn = document.getElementById('sendbtn');
+  if(btn) btn.disabled = false;
   setStatus('ready');
-  document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
+  document.querySelectorAll('.thinking-wrap').forEach(el => el.remove());
 }
 
-// Fix freeze on tab switch
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden && busy){
-    resetBusy();
-  }
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) resetBusy();
 });
-
-// Reset every 2s if stuck — nuclear option
 
 
 async function init(){
@@ -619,7 +614,7 @@ function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHei
 async function send(){
   if(busy||!currentChatId)return;
   clearTimeout(busyTimer);
-  busyTimer=setTimeout(()=>{if(busy)resetBusy();},30000);
+  busyTimer=setTimeout(()=>{if(busy)resetBusy();},15000);
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
   if(!text)return;
@@ -642,7 +637,7 @@ async function send(){
   let notifContext='';
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
   try{
-    abortController=new AbortController();   const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history||[],memoryContext,notifContext}),signal:abortController.signal});
+   const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history||[],memoryContext,notifContext})});
     const data=await res.json();
     thinkEl.remove();
     if(!res.ok)throw new Error(data.error||'Something went wrong');
