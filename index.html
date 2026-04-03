@@ -508,7 +508,7 @@ async function handleAuth(){
     }else{
       const{data,error}=await sb.auth.signUp({email,password,options:{data:{name:name||email.split('@')[0]}}});
       if(error)throw error;
-      if(username&&data?.user)await sb.from('aki_usernames').upsert({user_id:data.user.id,username}).catch(()=>{});
+      if(username&&data?.user){try{await sb.from('aki_usernames').upsert({user_id:data.user.id,username});}catch(e){}}
       const s=document.getElementById('auth-success');s.textContent='✓ Account created! You can now sign in.';s.classList.add('show');
       switchAuthTab('login');
     }
