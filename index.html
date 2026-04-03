@@ -60,6 +60,9 @@
   .user-handle-row{display:flex;align-items:center;gap:6px;margin-top:1px;}
   .user-handle{font-size:11px;color:var(--text3);}
   .edit-handle-btn{font-size:10px;color:#e8c840;cursor:pointer;background:none;border:none;padding:0;font-family:'Geist',sans-serif;}
+  .cal-status{font-size:10px;padding:2px 8px;border-radius:100px;font-weight:500;margin-top:4px;display:inline-block;}
+  .cal-status.connected{background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.2);}
+  .cal-status.disconnected{background:rgba(232,200,64,0.1);color:#d4a820;border:1px solid rgba(232,200,64,0.2);cursor:pointer;}
   .sidebar-nav{display:flex;padding:10px 12px;gap:4px;border-bottom:1px solid var(--border);}
   .nav-tab{flex:1;padding:8px 4px;border-radius:9px;border:none;background:transparent;color:var(--text3);font-family:'Geist',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;text-align:center;}
   .nav-tab.active{background:var(--accent-light);color:var(--text);}
@@ -158,6 +161,15 @@
   .bubble li{margin-bottom:5px;}
   .msg.user .bubble code{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:white;}
   .model-tag{font-size:10px;color:var(--text3);padding-left:4px;}
+  /* Calendar card */
+  .cal-card{background:var(--surface2);border:1px solid rgba(232,200,64,0.3);border-radius:14px;padding:14px;margin-top:10px;display:flex;flex-direction:column;gap:10px;}
+  .cal-card-title{font-size:13px;font-weight:600;color:#e8c840;display:flex;align-items:center;gap:6px;}
+  .cal-card-detail{font-size:13px;color:var(--text2);}
+  .cal-card-btns{display:flex;gap:8px;}
+  .cal-card-btn{flex:1;padding:9px;border-radius:10px;border:none;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;}
+  .cal-card-btn.primary{background:#e8c840;color:#1a1a1a;}
+  .cal-card-btn.secondary{background:var(--surface3);color:var(--text2);}
+  .cal-card-btn:active{transform:scale(0.97);}
   .thinking-wrap{display:flex;gap:10px;}
   .thinking{display:flex;gap:5px;padding:13px 16px;background:var(--ai-bg);border:1px solid var(--border);border-radius:18px;border-bottom-left-radius:5px;align-items:center;box-shadow:var(--shadow-sm);}
   .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:dotBounce 1.3s infinite ease-in-out;}
@@ -264,6 +276,7 @@
             <span class="user-handle" id="user-handle">@—</span>
             <button class="edit-handle-btn" onclick="openEditUsername()">✏️ Edit</button>
           </div>
+          <div id="cal-status-badge" class="cal-status disconnected" onclick="connectCalendar()">📅 Connect Calendar</div>
         </div>
       </div>
       <div class="sidebar-nav">
@@ -386,13 +399,7 @@
 </div>
 <div id="toast"></div>
 <script>
-// ══════════════════════════════════
-// IMPORTANT: After Cloudflare setup,
-// replace this URL with your Worker URL
-// e.g. https://aki.yourname.workers.dev
-// ══════════════════════════════════
 const API_URL = 'https://broken-voice-4f03.aaradhya-bhatkar2017.workers.dev';
-
 const SUPABASE_URL='https://ipykuhdyoodgfeastott.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlweWt1aGR5b29kZ2ZlYXN0b3R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjA3OTYsImV4cCI6MjA5MDI5Njc5Nn0.1Bt1DlQgrW1DG_kSApGZMo8qzRpIoE7wUoMv7XUbTFA';
 const {createClient}=supabase;
@@ -400,30 +407,111 @@ const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
-let busy=false,darkMode=true,largeFont=false,busyTimer=null;
+let darkMode=true,largeFont=false;
 let isListening=false,recognition=null,sendToFriendId=null;
+let calendarAccessToken=null;
+let currentController=null;
 
 // ── TAB FREEZE FIX ──
-// Simple and clean — just reset state when tab becomes visible
 function resetBusy(){
-  clearTimeout(busyTimer);
-  busy=false;
+  if(currentController){currentController.abort();currentController=null;}
   const btn=document.getElementById('sendbtn');
-  if(btn){btn.disabled=false;}
+  if(btn)btn.disabled=false;
   setStatus('ready');
   document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
 }
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)resetBusy();});
+window.addEventListener('focus',resetBusy);
 
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden) resetBusy();
-});
+// ── CALENDAR ──
+function connectCalendar(){
+  sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{
+      scopes:'https://www.googleapis.com/auth/calendar.events',
+      redirectTo:window.location.origin,
+      queryParams:{access_type:'offline',prompt:'consent'}
+    }
+  });
+}
+
+function updateCalendarStatus(token){
+  const badge=document.getElementById('cal-status-badge');
+  if(token){
+    badge.className='cal-status connected';
+    badge.textContent='📅 Calendar Connected';
+    badge.onclick=null;
+  }else{
+    badge.className='cal-status disconnected';
+    badge.textContent='📅 Connect Calendar';
+    badge.onclick=connectCalendar;
+  }
+}
+
+async function addToCalendar(event,accessToken){
+  if(!accessToken){
+    toast('📅 Connect your Google Calendar first!');
+    connectCalendar();
+    return false;
+  }
+
+  const dateStr=event.date||new Date().toISOString().split('T')[0];
+  const timeStr=event.time||'09:00';
+  const startTime=`${dateStr}T${timeStr}:00`;
+  const endDate=new Date(startTime);
+  endDate.setMinutes(endDate.getMinutes()+(event.duration||30));
+  const endTime=endDate.toISOString().slice(0,19);
+
+  try{
+    const res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        messages:[{role:'user',content:'calendar'}],
+        calendarAction:{
+          accessToken,
+          action:'create',
+          event:{
+            title:event.title,
+            description:event.description||'Added by Aki',
+            startTime,
+            endTime
+          }
+        }
+      })
+    });
+    const data=await res.json();
+    if(data.success){
+      toast('✅ Added to Google Calendar!');
+      return true;
+    }else{
+      toast('❌ Calendar error: '+data.error);
+      return false;
+    }
+  }catch(e){
+    toast('❌ Could not add to calendar');
+    return false;
+  }
+}
 
 async function init(){
-  try{const{data:{session}}=await sb.auth.getSession();if(session)await onSignedIn(session.user);else showAuthPage();}
-  catch(e){showAuthPage();}
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){
+      calendarAccessToken=session.provider_token||null;
+      await onSignedIn(session.user);
+    }else showAuthPage();
+  }catch(e){showAuthPage();}
+
   sb.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session)await onSignedIn(session.user);
-    else if(event==='SIGNED_OUT')showAuthPage();
+    if(event==='SIGNED_IN'&&session){
+      calendarAccessToken=session.provider_token||null;
+      await onSignedIn(session.user);
+    }else if(event==='SIGNED_OUT')showAuthPage();
+    else if(event==='TOKEN_REFRESHED'&&session){
+      calendarAccessToken=session.provider_token||null;
+      updateCalendarStatus(calendarAccessToken);
+    }
   });
   setupVoice();
 }
@@ -434,10 +522,11 @@ async function onSignedIn(user){
   document.getElementById('auth-page').style.display='none';
   document.getElementById('app').classList.add('visible');
   const{data:profile}=await sb.from('profiles').select('*').eq('id',user.id).single();
-  const name=profile?.name||user.email.split('@')[0];
+  const name=profile?.name||user.user_metadata?.full_name||user.email.split('@')[0];
   document.getElementById('user-name').textContent=name;
   document.getElementById('user-avatar').textContent=name[0].toUpperCase();
   await refreshUsername();
+  updateCalendarStatus(calendarAccessToken);
   const{data:settings}=await sb.from('settings').select('*').eq('user_id',user.id).single();
   if(settings){darkMode=settings.dark_mode!==false;largeFont=settings.large_font||false;}
   applyTheme(false);applyFont(false);
@@ -516,8 +605,17 @@ async function handleAuth(){
   btn.disabled=false;btn.textContent=authMode==='login'?'Sign In':'Create Account';
 }
 
-async function signInWithGoogle(){await sb.auth.signInWithOAuth({provider:'google'});}
-async function signOut(){await sb.auth.signOut();chats=[];friends=[];memories=[];currentUser=null;closeSidebar();}
+async function signInWithGoogle(){
+  await sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{
+      scopes:'https://www.googleapis.com/auth/calendar.events',
+      redirectTo:window.location.origin
+    }
+  });
+}
+
+async function signOut(){await sb.auth.signOut();chats=[];friends=[];memories=[];currentUser=null;calendarAccessToken=null;closeSidebar();}
 function showAuthError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show');}
 
 async function loadChats(){
@@ -568,8 +666,8 @@ function renderMessages(messages){
       <div class="w-divider"></div>
       <div class="w-chips">
         <div class="chip" onclick="q('What do you remember about me?')">What do you know about me?</div>
+        <div class="chip" onclick="q('Remind me to drink water every hour today')">Set a reminder</div>
         <div class="chip" onclick="q('Draw me a picture of a sunset')">Generate an image</div>
-        <div class="chip" onclick="q('What can you do?')">What can you do?</div>
         <div class="chip" onclick="q('Give me a business idea')">Business idea</div>
         <div class="chip" onclick="q('Who created you?')">Who made you?</div>
         <div class="chip" onclick="q('Latest tech news')">Latest news</div>
@@ -580,7 +678,7 @@ function renderMessages(messages){
   chat.innerHTML='';
   messages.forEach(m=>{
     if(m.image)addImageBubble(m.image,false);
-    else addBubble(m.role,m.content,m.model,false);
+    else addBubble(m.role,m.content,m.model,false,m.calendar_event?JSON.parse(m.calendar_event):null);
   });
   scrollDown();
 }
@@ -590,7 +688,7 @@ function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
 
 async function send(){
-  if(busy||!currentChatId)return;
+  if(document.getElementById('sendbtn').disabled||!currentChatId)return;
 
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
@@ -608,16 +706,9 @@ async function send(){
     chat.title=title;renderList();
   }
 
-  addBubble('user',text,null,true);scrollDown();
-
-  // Set busy AFTER all awaits above
-  busy=true;
+  addBubble('user',text,null,true,null);scrollDown();
   document.getElementById('sendbtn').disabled=true;
   setStatus('thinking');
-
-  // Auto reset after 20s max
-  busyTimer=setTimeout(resetBusy, 20000);
-
   const thinkEl=addThinking();
 
   const{data:history}=await sb.from('messages').select('role,content').eq('chat_id',currentChatId).order('created_at',{ascending:true});
@@ -628,39 +719,46 @@ async function send(){
   let notifContext='';
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
 
+  currentController=new AbortController();
+  const timeout=setTimeout(()=>currentController?.abort(),25000);
+
   try{
     const res=await fetch(API_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:history||[],memoryContext,notifContext})
+      body:JSON.stringify({messages:history||[],memoryContext,notifContext}),
+      signal:currentController.signal
     });
     const data=await res.json();
     thinkEl.remove();
     if(!res.ok)throw new Error(data.error||'Something went wrong');
+
     if(data.image){
       await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:data.text,image:data.image});
       addImageBubble(data.image,true);
     }else{
-      await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:data.text,model:data.model||null});
-      addBubble('ai',data.text,data.model,true);
+      // Handle calendar event
+      let calEvent=data.calendarEvent||null;
+      const calEventStr=calEvent?JSON.stringify(calEvent):null;
+      await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:data.text,model:data.model||null,calendar_event:calEventStr});
+      addBubble('ai',data.text,data.model,true,calEvent);
     }
+
     await sb.from('chats').update({updated_at:new Date().toISOString()}).eq('id',currentChatId);
     setStatus('ready');
     extractMemories(text,data.text);
   }catch(err){
     thinkEl.remove();
     if(err.name!=='AbortError'){
-      addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true);
+      addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true,null);
     }
     setStatus('ready');
   }finally{
-    // Always runs — even if tab was switched mid-request
-    clearTimeout(busyTimer);
-    busy=false;
+    clearTimeout(timeout);
+    currentController=null;
     document.getElementById('sendbtn').disabled=false;
+    scrollDown();
   }
-
-  scrollDown();
 }
 
 function addImageBubble(imgUrl,animate){
@@ -668,7 +766,7 @@ function addImageBubble(imgUrl,animate){
   const outer=document.createElement('div');
   outer.className='msg ai';
   if(!animate)outer.style.animation='none';
-  outer.innerHTML=`<div class="av ai">A</div><div class="bubble-wrap"><div class="bubble" style="padding:10px;"><p style="margin-bottom:8px;font-size:14px;">🎨 Here you go!</p><img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--text2);font-size:13px;\\'>❌ Image service unavailable. Try again later.</p>'"></div></div>`;
+  outer.innerHTML=`<div class="av ai">A</div><div class="bubble-wrap"><div class="bubble" style="padding:10px;"><p style="margin-bottom:8px;font-size:14px;">🎨 Here is your image!</p><img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--text2);font-size:13px;\\'>❌ Image service unavailable. Try again later.</p>'"></div></div>`;
   chat.appendChild(outer);scrollDown();
 }
 
@@ -744,15 +842,23 @@ function copyAkiId(){
   navigator.clipboard.writeText(id).then(()=>toast('✓ Aki ID copied!'));
 }
 
-function openSendToFriend(friendId,name){sendToFriendId=friendId;document.getElementById('send-friend-name').textContent=name;document.getElementById('send-content').value='';openModal('send-friend-modal');}
+function openSendToFriend(friendId,name){
+  sendToFriendId=friendId;
+  document.getElementById('send-friend-name').textContent=name;
+  document.getElementById('send-content').value='';
+  openModal('send-friend-modal');
+}
 
 async function sendToFriend(){
   const type=document.getElementById('send-type').value;
   const content=document.getElementById('send-content').value.trim();
   if(!content||!sendToFriendId)return;
+
+  // If it's a reminder or task, also try to add to friend's calendar via network message
   const{error}=await sb.from('network_messages').insert({from_user_id:currentUser.id,to_user_id:sendToFriendId,type,content});
   if(error){toast('❌ Failed to send');return;}
-  closeModal('send-friend-modal');toast('✓ Sent to friend\'s Aki!');
+  closeModal('send-friend-modal');
+  toast('✓ Sent to friend\'s Aki!'+(type!=='message'?' They\'ll get a calendar invite too.':''));
 }
 
 async function loadNotifications(){
@@ -769,8 +875,23 @@ function updateNotifBadge(){
 function openNotifications(){
   const list=document.getElementById('notif-list');
   if(!notifications.length)list.innerHTML='<div class="no-chats">No notifications yet.</div>';
-  else list.innerHTML=notifications.map(n=>`<div class="notif-item"><div class="notif-from">From a friend's Aki</div><div class="notif-content">${n.type==='reminder'?'⏰':n.type==='task'?'✅':'💬'} ${n.content}</div><div class="notif-time">${new Date(n.created_at).toLocaleString()}</div><div class="notif-actions"><button class="notif-action-btn done" onclick="markNotifDone('${n.id}')">✓ Done</button><button class="notif-action-btn dismiss" onclick="dismissNotif('${n.id}')">Dismiss</button></div></div>`).join('');
+  else list.innerHTML=notifications.map(n=>`<div class="notif-item">
+    <div class="notif-from">From a friend's Aki</div>
+    <div class="notif-content">${n.type==='reminder'?'⏰':n.type==='task'?'✅':'💬'} ${n.content}</div>
+    <div class="notif-time">${new Date(n.created_at).toLocaleString()}</div>
+    <div class="notif-actions">
+      ${n.type!=='message'?`<button class="notif-action-btn primary" style="background:#e8c840;color:#1a1a1a;border:none;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;" onclick="addNotifToCalendar('${n.id}','${n.content.replace(/'/g,"\\'")}')">📅 Add to Calendar</button>`:''}
+      <button class="notif-action-btn done" onclick="markNotifDone('${n.id}')">✓ Done</button>
+      <button class="notif-action-btn dismiss" onclick="dismissNotif('${n.id}')">Dismiss</button>
+    </div>
+  </div>`).join('');
   openModal('notif-modal');
+}
+
+async function addNotifToCalendar(id,content){
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+  const dateStr=tomorrow.toISOString().split('T')[0];
+  await addToCalendar({title:content,date:dateStr,time:'09:00',duration:30},calendarAccessToken);
 }
 
 async function markNotifDone(id){await sb.from('network_messages').update({is_read:true,is_done:true}).eq('id',id);notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();}
@@ -826,15 +947,36 @@ function setStatus(s){
   document.getElementById('statustext').textContent=s==='thinking'?'Thinking…':'Ready';
 }
 
-function addBubble(role,content,model,animate){
+function addBubble(role,content,model,animate,calEvent){
   const chat=document.getElementById('chat');
   const outer=document.createElement('div');outer.className=`msg ${role}`;if(!animate)outer.style.animation='none';
   const av=document.createElement('div');av.className=`av ${role}`;av.textContent=role==='user'?'You':'A';
   const wrap=document.createElement('div');wrap.className='bubble-wrap';
   const bubble=document.createElement('div');bubble.className='bubble';bubble.style.fontSize=largeFont?'17px':'15px';bubble.innerHTML=md(content);
+
+  // Add calendar card if event detected
+  if(calEvent&&role==='ai'){
+    const card=document.createElement('div');
+    card.className='cal-card';
+    const dateDisplay=calEvent.date?new Date(calEvent.date+'T'+(calEvent.time||'09:00')).toLocaleString('en-IN',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Soon';
+    card.innerHTML=`
+      <div class="cal-card-title">📅 Calendar Event Detected</div>
+      <div class="cal-card-detail"><strong>${calEvent.title}</strong></div>
+      <div class="cal-card-detail" style="color:var(--text3);font-size:12px;">${dateDisplay} · ${calEvent.duration||30} mins</div>
+      <div class="cal-card-btns">
+        <button class="cal-card-btn primary" onclick="handleCalendarAdd(${JSON.stringify(calEvent).replace(/"/g,'&quot;')})">Add to My Calendar</button>
+        <button class="cal-card-btn secondary" onclick="this.closest('.cal-card').remove()">Dismiss</button>
+      </div>`;
+    bubble.appendChild(card);
+  }
+
   wrap.appendChild(bubble);
   if(model&&role==='ai'){const tag=document.createElement('div');tag.className='model-tag';tag.textContent='↳ '+model;wrap.appendChild(tag);}
   outer.appendChild(av);outer.appendChild(wrap);chat.appendChild(outer);
+}
+
+async function handleCalendarAdd(calEvent){
+  await addToCalendar(calEvent,calendarAccessToken);
 }
 
 function addThinking(){
