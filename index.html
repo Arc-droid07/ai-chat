@@ -726,7 +726,7 @@ async function send(){
     const res=await fetch(API_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:history||[],memoryContext,notifContext}),
+     body: JSON.stringify({ messages: history || [], memoryContext, notifContext, calendarToken: window.googleCalendarToken || null })
       signal:currentController.signal
     });
     const data=await res.json();
