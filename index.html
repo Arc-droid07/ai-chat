@@ -403,7 +403,15 @@ const API_URL = 'https://broken-voice-4f03.aaradhya-bhatkar2017.workers.dev';
 const SUPABASE_URL='https://ipykuhdyoodgfeastott.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlweWt1aGR5b29kZ2ZlYXN0b3R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjA3OTYsImV4cCI6MjA5MDI5Njc5Nn0.1Bt1DlQgrW1DG_kSApGZMo8qzRpIoE7wUoMv7XUbTFA';
 const {createClient}=supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+  auth:{
+    persistSession:true,
+    storageKey:'aki-auth',
+    storage:window.localStorage,
+    autoRefreshToken:true,
+    detectSessionInUrl:true
+  }
+});
 
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
