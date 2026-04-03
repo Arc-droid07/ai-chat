@@ -202,12 +202,10 @@
 </style>
 </head>
 <body>
-
 <div id="loading-screen">
   <div class="aki-logo lg">A</div>
   <div class="spinner"></div>
 </div>
-
 <div id="auth-page" style="display:none">
   <div class="auth-card">
     <div class="auth-header">
@@ -247,7 +245,6 @@
     </button>
   </div>
 </div>
-
 <div id="app">
   <div id="overlay" onclick="closeSidebar()"></div>
   <div id="layout">
@@ -325,7 +322,6 @@
         <button class="signout-btn" onclick="signOut()">Sign out</button>
       </div>
     </div>
-
     <div id="main">
       <div id="header">
         <div class="hleft">
@@ -355,21 +351,17 @@
     </div>
   </div>
 </div>
-
-<!-- Edit Username Modal -->
 <div class="modal-overlay" id="username-modal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Edit Aki Username</div>
-    <p style="font-size:13px;color:var(--text2);line-height:1.5;">This is how friends find you on Aki Network. Choose something unique.</p>
+    <p style="font-size:13px;color:var(--text2);line-height:1.5;">This is how friends find you on Aki Network.</p>
     <input class="modal-input" id="new-username-input" type="text" placeholder="e.g. aaradhy07" autocomplete="off">
     <div id="username-error" style="font-size:13px;color:#dc2626;display:none;"></div>
     <button class="modal-btn" onclick="saveUsername()">Save Username</button>
     <button class="modal-btn-sec" onclick="closeModal('username-modal')">Cancel</button>
   </div>
 </div>
-
-<!-- Notifications Modal -->
 <div class="modal-overlay" id="notif-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -378,8 +370,6 @@
     <button class="modal-btn-sec" onclick="closeModal('notif-modal')">Close</button>
   </div>
 </div>
-
-<!-- Send to Friend Modal -->
 <div class="modal-overlay" id="send-friend-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -394,35 +384,39 @@
     <button class="modal-btn-sec" onclick="closeModal('send-friend-modal')">Cancel</button>
   </div>
 </div>
-
 <div id="toast"></div>
-
 <script>
+// ══════════════════════════════════
+// IMPORTANT: After Cloudflare setup,
+// replace this URL with your Worker URL
+// e.g. https://aki.yourname.workers.dev
+// ══════════════════════════════════
+const API_URL = 'https://broken-voice-4f03.aaradhya-bhatkar2017.workers.dev';
+
 const SUPABASE_URL='https://ipykuhdyoodgfeastott.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlweWt1aGR5b29kZ2ZlYXN0b3R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjA3OTYsImV4cCI6MjA5MDI5Njc5Nn0.1Bt1DlQgrW1DG_kSApGZMo8qzRpIoE7wUoMv7XUbTFA';
 const {createClient}=supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const API_URL='/api/chat';
 
 let currentUser=null,currentChatId=null;
 let chats=[],friends=[],memories=[],notifications=[];
 let busy=false,darkMode=true,largeFont=false,busyTimer=null;
 let isListening=false,recognition=null,sendToFriendId=null;
 
+// ── TAB FREEZE FIX ──
+// Simple and clean — just reset state when tab becomes visible
 function resetBusy(){
   clearTimeout(busyTimer);
-  busy = false;
-  abortController = null;
-  const btn = document.getElementById('sendbtn');
-  if(btn) btn.disabled = false;
+  busy=false;
+  const btn=document.getElementById('sendbtn');
+  if(btn){btn.disabled=false;}
   setStatus('ready');
-  document.querySelectorAll('.thinking-wrap').forEach(el => el.remove());
+  document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
 }
 
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange',()=>{
   if(!document.hidden) resetBusy();
 });
-
 
 async function init(){
   try{const{data:{session}}=await sb.auth.getSession();if(session)await onSignedIn(session.user);else showAuthPage();}
@@ -459,7 +453,6 @@ function showAuthPage(){
   document.getElementById('app').classList.remove('visible');
 }
 
-// ── USERNAME ──
 async function refreshUsername(){
   const{data:uname}=await sb.from('aki_usernames').select('username').eq('user_id',currentUser.id).single();
   const handle=uname?.username||null;
@@ -479,21 +472,13 @@ async function saveUsername(){
   const errEl=document.getElementById('username-error');
   if(!val){errEl.textContent='Please enter a username';errEl.style.display='block';return;}
   if(!/^[a-z0-9_]{3,20}$/.test(val)){errEl.textContent='3-20 chars, letters/numbers/underscore only';errEl.style.display='block';return;}
-
-  // Check if taken
   const{data:existing}=await sb.from('aki_usernames').select('user_id').eq('username',val).single();
   if(existing&&existing.user_id!==currentUser.id){errEl.textContent='Username already taken';errEl.style.display='block';return;}
-
-  // Upsert
   const{error}=await sb.from('aki_usernames').upsert({user_id:currentUser.id,username:val});
   if(error){errEl.textContent='Failed to save. Try again.';errEl.style.display='block';return;}
-
-  closeModal('username-modal');
-  await refreshUsername();
-  toast('✓ Username updated!');
+  closeModal('username-modal');await refreshUsername();toast('✓ Username updated!');
 }
 
-// ── AUTH ──
 let authMode='login';
 function switchAuthTab(mode){
   authMode=mode;
@@ -519,17 +504,12 @@ async function handleAuth(){
   document.getElementById('auth-success').classList.remove('show');
   try{
     if(authMode==='login'){
-      const{error}=await sb.auth.signInWithPassword({email,password});
-      if(error)throw error;
+      const{error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;
     }else{
       const{data,error}=await sb.auth.signUp({email,password,options:{data:{name:name||email.split('@')[0]}}});
       if(error)throw error;
-      if(username&&data?.user){
-        await sb.from('aki_usernames').upsert({user_id:data.user.id,username}).catch(()=>{});
-      }
-      const s=document.getElementById('auth-success');
-      s.textContent='✓ Account created! You can now sign in.';
-      s.classList.add('show');
+      if(username&&data?.user)await sb.from('aki_usernames').upsert({user_id:data.user.id,username}).catch(()=>{});
+      const s=document.getElementById('auth-success');s.textContent='✓ Account created! You can now sign in.';s.classList.add('show');
       switchAuthTab('login');
     }
   }catch(err){showAuthError(err.message);}
@@ -540,7 +520,6 @@ async function signInWithGoogle(){await sb.auth.signInWithOAuth({provider:'googl
 async function signOut(){await sb.auth.signOut();chats=[];friends=[];memories=[];currentUser=null;closeSidebar();}
 function showAuthError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show');}
 
-// ── CHATS ──
 async function loadChats(){
   const{data}=await sb.from('chats').select('*').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
   chats=data||[];renderList();
@@ -606,38 +585,55 @@ function renderMessages(messages){
   scrollDown();
 }
 
-// ── SEND ──
 function q(text){document.getElementById('inp').value=text;send();}
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
 
 async function send(){
   if(busy||!currentChatId)return;
-  clearTimeout(busyTimer);
-  busyTimer=setTimeout(()=>{if(busy)resetBusy();},15000);
+
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
   if(!text)return;
+
   const w=document.getElementById('welcome');if(w)w.remove();
   inp.value='';inp.style.height='auto';
+
   await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'user',content:text});
+
   const chat=chats.find(c=>c.id===currentChatId);
   if(chat&&chat.title==='New conversation'){
     const title=text.substring(0,35)+(text.length>35?'…':'');
     await sb.from('chats').update({title,updated_at:new Date().toISOString()}).eq('id',currentChatId);
     chat.title=title;renderList();
   }
+
   addBubble('user',text,null,true);scrollDown();
-  busy=true;document.getElementById('sendbtn').disabled=true;setStatus('thinking');
+
+  // Set busy AFTER all awaits above
+  busy=true;
+  document.getElementById('sendbtn').disabled=true;
+  setStatus('thinking');
+
+  // Auto reset after 20s max
+  busyTimer=setTimeout(resetBusy, 20000);
+
   const thinkEl=addThinking();
+
   const{data:history}=await sb.from('messages').select('role,content').eq('chat_id',currentChatId).order('created_at',{ascending:true});
   const{data:notifMessages}=await sb.from('network_messages').select('*').eq('to_user_id',currentUser.id).eq('is_read',false);
+
   let memoryContext='';
   if(memories.length>0)memoryContext='\n\nWhat you know about this user:\n'+memories.map(m=>`- ${m.fact}`).join('\n');
   let notifContext='';
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
+
   try{
-   const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history||[],memoryContext,notifContext})});
+    const res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history||[],memoryContext,notifContext})
+    });
     const data=await res.json();
     thinkEl.remove();
     if(!res.ok)throw new Error(data.error||'Something went wrong');
@@ -653,11 +649,17 @@ async function send(){
     extractMemories(text,data.text);
   }catch(err){
     thinkEl.remove();
-    addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true);
+    if(err.name!=='AbortError'){
+      addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true);
+    }
     setStatus('ready');
+  }finally{
+    // Always runs — even if tab was switched mid-request
+    clearTimeout(busyTimer);
+    busy=false;
+    document.getElementById('sendbtn').disabled=false;
   }
-  busy=false;clearTimeout(busyTimer);
-  document.getElementById('sendbtn').disabled=false;
+
   scrollDown();
 }
 
@@ -666,18 +668,10 @@ function addImageBubble(imgUrl,animate){
   const outer=document.createElement('div');
   outer.className='msg ai';
   if(!animate)outer.style.animation='none';
-  outer.innerHTML=`
-    <div class="av ai">A</div>
-    <div class="bubble-wrap">
-      <div class="bubble" style="padding:10px;">
-        <p style="margin-bottom:8px;font-size:14px;">🎨 Here you go!</p>
-        <img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--text2);font-size:13px;\\'>❌ Image service unavailable. Try again later.</p>'">
-      </div>
-    </div>`;
+  outer.innerHTML=`<div class="av ai">A</div><div class="bubble-wrap"><div class="bubble" style="padding:10px;"><p style="margin-bottom:8px;font-size:14px;">🎨 Here you go!</p><img src="${imgUrl}" class="gen-image" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--text2);font-size:13px;\\'>❌ Image service unavailable. Try again later.</p>'"></div></div>`;
   chat.appendChild(outer);scrollDown();
 }
 
-// ── MEMORY ──
 async function loadMemories(){
   const{data}=await sb.from('memories').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
   memories=data||[];renderMemories();
@@ -686,12 +680,7 @@ async function loadMemories(){
 function renderMemories(){
   const list=document.getElementById('memory-list');
   if(!memories.length){list.innerHTML='<div class="no-chats">Aki is still learning about you.<br>Keep chatting!</div>';return;}
-  list.innerHTML=memories.map(m=>`
-    <div class="memory-item">
-      <div class="memory-cat">${m.category}</div>
-      <div class="memory-fact">${m.fact}</div>
-      <div class="memory-del" onclick="deleteMemory('${m.id}')">✕</div>
-    </div>`).join('');
+  list.innerHTML=memories.map(m=>`<div class="memory-item"><div class="memory-cat">${m.category}</div><div class="memory-fact">${m.fact}</div><div class="memory-del" onclick="deleteMemory('${m.id}')">✕</div></div>`).join('');
 }
 
 async function deleteMemory(id){
@@ -701,10 +690,7 @@ async function deleteMemory(id){
 
 async function extractMemories(userMsg,aiMsg){
   const text=userMsg.toLowerCase();const facts=[];
-  if(text.includes('my name is')||text.includes("i'm ")||text.includes('i am ')){
-    const match=userMsg.match(/(?:my name is|i'm|i am) ([A-Z][a-z]+)/i);
-    if(match)facts.push({category:'personal',fact:`User's name is ${match[1]}`});
-  }
+  if(text.includes('my name is')||text.includes("i'm ")||text.includes('i am ')){const match=userMsg.match(/(?:my name is|i'm|i am) ([A-Z][a-z]+)/i);if(match)facts.push({category:'personal',fact:`User's name is ${match[1]}`});}
   if(text.includes('i study')||text.includes('college')||text.includes('university'))facts.push({category:'personal',fact:`Student: "${userMsg.substring(0,80)}"`});
   if(text.includes('i like')||text.includes('i love')||text.includes('i enjoy'))facts.push({category:'preferences',fact:`Likes: "${userMsg.substring(0,80)}"`});
   if(text.includes('i want to')||text.includes('my goal')||text.includes('i plan to'))facts.push({category:'goals',fact:`Goal: "${userMsg.substring(0,80)}"`});
@@ -717,77 +703,39 @@ async function extractMemories(userMsg,aiMsg){
   if(facts.length>0)renderMemories();
 }
 
-// ── AKI NETWORK (FIXED) ──
 async function loadFriends(){
-  // Get all accepted connections where I am the user
-  const{data}=await sb.from('aki_network')
-    .select('friend_id, status')
-    .eq('user_id',currentUser.id)
-    .eq('status','accepted');
-
+  const{data}=await sb.from('aki_network').select('friend_id,status').eq('user_id',currentUser.id).eq('status','accepted');
   if(!data||!data.length){friends=[];renderFriends();return;}
-
-  // Get usernames for all friends
   const friendIds=data.map(f=>f.friend_id);
-  const{data:usernames}=await sb.from('aki_usernames')
-    .select('user_id, username')
-    .in('user_id',friendIds);
-
-  // Get profiles
-  const{data:profiles}=await sb.from('profiles')
-    .select('id, name, email')
-    .in('id',friendIds);
-
-  // Combine
+  const{data:usernames}=await sb.from('aki_usernames').select('user_id,username').in('user_id',friendIds);
+  const{data:profiles}=await sb.from('profiles').select('id,name,email').in('id',friendIds);
   friends=data.map(f=>{
     const uname=usernames?.find(u=>u.user_id===f.friend_id);
     const profile=profiles?.find(p=>p.id===f.friend_id);
-    return{
-      friend_id:f.friend_id,
-      username:uname?.username||null,
-      name:profile?.name||profile?.email?.split('@')[0]||'Friend',
-      email:profile?.email||''
-    };
+    return{friend_id:f.friend_id,username:uname?.username||null,name:profile?.name||profile?.email?.split('@')[0]||'Friend',email:profile?.email||''};
   });
-
   renderFriends();
 }
 
 function renderFriends(){
   const list=document.getElementById('friends-list');
   if(!friends.length){list.innerHTML='<div class="no-chats">No friends yet.<br>Add by @username above.</div>';return;}
-  list.innerHTML=friends.map(f=>`
-    <div class="friend-item">
-      <div class="friend-avatar">${f.name[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="friend-name">${f.name}</div>
-        <div class="friend-handle">${f.username?'@'+f.username:'No username set'}</div>
-      </div>
-      <button class="friend-msg-btn" onclick="openSendToFriend('${f.friend_id}','${f.name}')">Send</button>
-    </div>`).join('');
+  list.innerHTML=friends.map(f=>`<div class="friend-item"><div class="friend-avatar">${f.name[0].toUpperCase()}</div><div style="flex:1;min-width:0;"><div class="friend-name">${f.name}</div><div class="friend-handle">${f.username?'@'+f.username:'No username set'}</div></div><button class="friend-msg-btn" onclick="openSendToFriend('${f.friend_id}','${f.name}')">Send</button></div>`).join('');
 }
 
 async function addFriend(){
   const input=document.getElementById('add-friend-input');
   const username=input.value.trim().replace('@','').toLowerCase();
   if(!username){toast('Enter a username');return;}
-
   const{data:udata,error:uerr}=await sb.from('aki_usernames').select('user_id').eq('username',username).single();
   if(uerr||!udata){toast('❌ User @'+username+' not found');return;}
   if(udata.user_id===currentUser.id){toast('❌ That\'s your own username!');return;}
-
-  // Check if already friends
   const{data:existing}=await sb.from('aki_network').select('id').eq('user_id',currentUser.id).eq('friend_id',udata.user_id).single();
   if(existing){toast('⚠ Already connected!');return;}
-
-  // Add both directions
   const{error}=await sb.from('aki_network').insert({user_id:currentUser.id,friend_id:udata.user_id,status:'accepted'});
   if(error){toast('❌ Error adding friend');return;}
   await sb.from('aki_network').insert({user_id:udata.user_id,friend_id:currentUser.id,status:'accepted'}).catch(()=>{});
-
-  input.value='';
-  await loadFriends();
-  toast('✓ Connected with @'+username+'!');
+  input.value='';await loadFriends();toast('✓ Connected with @'+username+'!');
 }
 
 function copyAkiId(){
@@ -796,12 +744,7 @@ function copyAkiId(){
   navigator.clipboard.writeText(id).then(()=>toast('✓ Aki ID copied!'));
 }
 
-function openSendToFriend(friendId,name){
-  sendToFriendId=friendId;
-  document.getElementById('send-friend-name').textContent=name;
-  document.getElementById('send-content').value='';
-  openModal('send-friend-modal');
-}
+function openSendToFriend(friendId,name){sendToFriendId=friendId;document.getElementById('send-friend-name').textContent=name;document.getElementById('send-content').value='';openModal('send-friend-modal');}
 
 async function sendToFriend(){
   const type=document.getElementById('send-type').value;
@@ -812,7 +755,6 @@ async function sendToFriend(){
   closeModal('send-friend-modal');toast('✓ Sent to friend\'s Aki!');
 }
 
-// ── NOTIFICATIONS ──
 async function loadNotifications(){
   const{data}=await sb.from('network_messages').select('*').eq('to_user_id',currentUser.id).eq('is_read',false).order('created_at',{ascending:false});
   notifications=data||[];updateNotifBadge();
@@ -827,29 +769,13 @@ function updateNotifBadge(){
 function openNotifications(){
   const list=document.getElementById('notif-list');
   if(!notifications.length)list.innerHTML='<div class="no-chats">No notifications yet.</div>';
-  else list.innerHTML=notifications.map(n=>`
-    <div class="notif-item">
-      <div class="notif-from">From a friend's Aki</div>
-      <div class="notif-content">${n.type==='reminder'?'⏰':n.type==='task'?'✅':'💬'} ${n.content}</div>
-      <div class="notif-time">${new Date(n.created_at).toLocaleString()}</div>
-      <div class="notif-actions">
-        <button class="notif-action-btn done" onclick="markNotifDone('${n.id}')">✓ Done</button>
-        <button class="notif-action-btn dismiss" onclick="dismissNotif('${n.id}')">Dismiss</button>
-      </div>
-    </div>`).join('');
+  else list.innerHTML=notifications.map(n=>`<div class="notif-item"><div class="notif-from">From a friend's Aki</div><div class="notif-content">${n.type==='reminder'?'⏰':n.type==='task'?'✅':'💬'} ${n.content}</div><div class="notif-time">${new Date(n.created_at).toLocaleString()}</div><div class="notif-actions"><button class="notif-action-btn done" onclick="markNotifDone('${n.id}')">✓ Done</button><button class="notif-action-btn dismiss" onclick="dismissNotif('${n.id}')">Dismiss</button></div></div>`).join('');
   openModal('notif-modal');
 }
 
-async function markNotifDone(id){
-  await sb.from('network_messages').update({is_read:true,is_done:true}).eq('id',id);
-  notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();
-}
-async function dismissNotif(id){
-  await sb.from('network_messages').update({is_read:true}).eq('id',id);
-  notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();
-}
+async function markNotifDone(id){await sb.from('network_messages').update({is_read:true,is_done:true}).eq('id',id);notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();}
+async function dismissNotif(id){await sb.from('network_messages').update({is_read:true}).eq('id',id);notifications=notifications.filter(n=>n.id!==id);updateNotifBadge();openNotifications();}
 
-// ── VOICE ──
 function setupVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){document.getElementById('voice-btn').style.display='none';return;}
@@ -859,7 +785,7 @@ function setupVoice(){
 }
 function toggleVoice(){if(isListening)stopListening();else startListening();}
 function startListening(){
-  if(!recognition){toast('Voice not supported in this browser');return;}
+  if(!recognition){toast('Voice not supported');return;}
   isListening=true;document.getElementById('voice-btn').classList.add('listening');document.getElementById('voice-btn').textContent='⏹️';
   recognition.start();toast('🎙️ Listening… speak now');
 }
@@ -868,7 +794,6 @@ function stopListening(){
   try{recognition.stop();}catch(e){}
 }
 
-// ── SETTINGS ──
 async function toggleTheme(){darkMode=!darkMode;applyTheme(true);await sb.from('settings').upsert({user_id:currentUser.id,dark_mode:darkMode});}
 function applyTheme(animate){
   document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
@@ -887,7 +812,6 @@ function applyFont(animate){
   if(animate)toast(largeFont?'Aa Large text':'Aa Medium text');
 }
 
-// ── UI ──
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 function openModal(id){document.getElementById(id).classList.add('show');}
