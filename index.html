@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- PWA Manifest -->
+<link rel="manifest" href="./manifest.json">
+
+<meta name="theme-color" content="#0f0f0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0e0e0e" id="theme-color-meta">
@@ -1014,7 +1020,19 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{document.getElementById('main').style.height=window.visualViewport.height+'px';});}
 document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',(e)=>{if(e.target===el)el.classList.remove('show');});});
-
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .then(() => {
+        console.log("AKI Service Worker Registered");
+      })
+      .catch(err => {
+        console.log("Service Worker Error:", err);
+      });
+  });
+}
 init();
 </script>
 </body>
