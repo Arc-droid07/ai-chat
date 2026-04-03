@@ -727,8 +727,7 @@ async function send(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
      body: JSON.stringify({ messages: history || [], memoryContext, notifContext, calendarToken: window.googleCalendarToken || null })
-      signal:currentController.signal
-    });
+});
     const data=await res.json();
     thinkEl.remove();
     if(!res.ok)throw new Error(data.error||'Something went wrong');
