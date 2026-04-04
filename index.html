@@ -20,6 +20,7 @@
   .aki-logo.md{width:34px;height:34px;font-size:16px;}
   .aki-logo.lg{width:72px;height:72px;font-size:32px;border-radius:22px;box-shadow:0 8px 32px rgba(212,168,32,0.4);animation:wFloat 5s ease-in-out infinite;}
   @keyframes wFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
   #auth-page{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
   .auth-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:32px 28px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:20px;}
   .auth-header{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;}
@@ -712,7 +713,6 @@ function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHei
 
 async function send(){
   if(document.getElementById('sendbtn').disabled||!currentChatId)return;
-
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
   if(!text)return;
@@ -743,35 +743,115 @@ async function send(){
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
 
   currentController=new AbortController();
-  const timeout=setTimeout(()=>currentController?.abort(),25000);
+  const timeout=setTimeout(()=>currentController?.abort(),30000);
 
+  // ── Streaming send ──────────────────────────────────────────────────────────
   try{
+    const{data:{session}}=await sb.auth.getSession();
     const res=await fetch(API_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages: history || [], memoryContext, notifContext, calendarToken: window.googleCalendarToken || null }),
-      signal: currentController.signal
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${session?.access_token||''}`
+      },
+      body:JSON.stringify({messages:history||[],memoryContext,notifContext,calendarToken:window.googleCalendarToken||null}),
+      signal:currentController.signal
     });
-    const data=await res.json();
-    thinkEl.remove();
-    if(!res.ok)throw new Error(data.error||'Something went wrong');
 
-    if(data.image){
-      await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:data.text,image:data.image});
-      addImageBubble(data.image,true);
-    }else{
-      // Handle calendar event
-      let calEvent=data.calendarEvent||null;
-      const calEventStr=calEvent?JSON.stringify(calEvent):null;
-      await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:data.text,model:data.model||null,calendar_event:calEventStr});
-      addBubble('ai',data.text,data.model,true,calEvent);
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error||'Something went wrong');
     }
 
+    // Remove thinking dots, create streaming bubble
+    thinkEl.remove();
+    setStatus('thinking');
+
+    // Build the AI bubble shell — we'll fill it token by token
+    const chatEl=document.getElementById('chat');
+    const outer=document.createElement('div');outer.className='msg ai';
+    const av=document.createElement('div');av.className='av ai';av.textContent='A';
+    const wrap=document.createElement('div');wrap.className='bubble-wrap';
+    const bubble=document.createElement('div');bubble.className='bubble';
+    bubble.style.fontSize=largeFont?'17px':'15px';
+    // Blinking cursor while streaming
+    const cursor=document.createElement('span');
+    cursor.style.cssText='display:inline-block;width:2px;height:1em;background:currentColor;margin-left:2px;vertical-align:text-bottom;animation:cursorBlink 0.7s steps(1) infinite;';
+    bubble.appendChild(cursor);
+    wrap.appendChild(bubble);
+    outer.appendChild(av);outer.appendChild(wrap);
+    chatEl.appendChild(outer);
+    scrollDown();
+
+    // Read the SSE stream
+    const reader=res.body.getReader();
+    const decoder=new TextDecoder();
+    let buf='';
+    let fullText='';
+    let modelName='';
+    let calEvent=null;
+
+    while(true){
+      const{done,value}=await reader.read();
+      if(done)break;
+      buf+=decoder.decode(value,{stream:true});
+      const lines=buf.split('\n');
+      buf=lines.pop();
+
+      for(const line of lines){
+        if(!line.startsWith('data: '))continue;
+        try{
+          const msg=JSON.parse(line.slice(6));
+          if(msg.type==='chunk'){
+            fullText+=msg.text;
+            // Update bubble content with cursor at end
+            bubble.innerHTML=md(fullText);
+            bubble.appendChild(cursor);
+            scrollDown();
+          } else if(msg.type==='done'){
+            modelName=msg.model||'';
+            calEvent=msg.calendarEvent||null;
+          }
+        }catch{}
+      }
+    }
+
+    // Remove cursor, render final markdown
+    cursor.remove();
+    bubble.innerHTML=md(fullText);
+
+    // Add calendar card if detected
+    if(calEvent){
+      const card=document.createElement('div');card.className='cal-card';
+      const dateDisplay=calEvent.date?new Date(calEvent.date+'T'+(calEvent.time||'09:00')).toLocaleString('en-IN',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Soon';
+      card.innerHTML=`
+        <div class="cal-card-title">📅 Calendar Event Detected</div>
+        <div class="cal-card-detail"><strong>${calEvent.title}</strong></div>
+        <div class="cal-card-detail" style="color:var(--text3);font-size:12px;">${dateDisplay} · ${calEvent.duration||30} mins</div>
+        <div class="cal-card-btns">
+          <button class="cal-card-btn primary" onclick="handleCalendarAdd(${JSON.stringify(calEvent).replace(/"/g,'&quot;')})">Add to My Calendar</button>
+          <button class="cal-card-btn secondary" onclick="this.closest('.cal-card').remove()">Dismiss</button>
+        </div>`;
+      bubble.appendChild(card);
+    }
+
+    // Add model tag
+    if(modelName){const tag=document.createElement('div');tag.className='model-tag';tag.textContent='↳ '+modelName;wrap.appendChild(tag);}
+
+    // Persist to Supabase
+    const calEventStr=calEvent?JSON.stringify(calEvent):null;
+    await sb.from('messages').insert({chat_id:currentChatId,user_id:currentUser.id,role:'assistant',content:fullText,model:modelName||null,calendar_event:calEventStr});
     await sb.from('chats').update({updated_at:new Date().toISOString()}).eq('id',currentChatId);
     setStatus('ready');
-    extractMemories(text,data.text);
+    extractMemories(text,fullText);
+    scrollDown();
+
   }catch(err){
-    thinkEl.remove();
+    // Clean up any partial bubble
+    document.querySelectorAll('.msg.ai:last-child').forEach(el=>{
+      if(el.querySelector('span[style*="cursorBlink"]'))el.remove();
+    });
+    if(thinkEl.parentNode)thinkEl.remove();
     if(err.name!=='AbortError'){
       addBubble('ai',`**Oops.** ${err.message||'Connection error. Try again.'}`,null,true,null);
     }
