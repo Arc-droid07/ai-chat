@@ -1,5 +1,3 @@
-// Vercel serverless function — streaming version
-
 export const config = { runtime: 'edge' };
 
 const CORS = {
@@ -14,7 +12,7 @@ async function fetchWithRetry(url, options, retries = 3) {
     if (res.status !== 429) return res;
     await new Promise(r => setTimeout(r, 500 * (2 ** i)));
   }
-  throw new Error('AI rate limit exceeded after retries');
+  throw new Error('AI rate limit exceeded');
 }
 
 function extractCalendarEvent(text) {
@@ -56,14 +54,19 @@ export default async function handler(request) {
 
   let body;
   try { body = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }); }
+  catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400, headers: { ...CORS, 'Content-Type': 'application/json' }
+    });
+  }
 
-  const { messages = [], memoryContext = '', notifContext = '', calendarToken, calendarAction } = body;
+  const { messages = [], memoryContext = '', notifContext = '', calendarAction } = body;
 
-  // Calendar shortcut — plain JSON response, no streaming needed
   if (calendarAction) {
     const result = await handleCalendarAction(calendarAction);
-    return new Response(JSON.stringify(result), { headers: { ...CORS, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(result), {
+      headers: { ...CORS, 'Content-Type': 'application/json' }
+    });
   }
 
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -81,7 +84,6 @@ Keep responses concise and conversational. Use markdown lightly.`;
     { url: 'https://openrouter.ai/api/v1/chat/completions',   key: OPENROUTER_API_KEY, model: 'mistralai/mistral-7b-instruct' },
   ];
 
-  let aiRes = null, modelName = '';
   for (const { url, key, model } of models) {
     if (!key) continue;
     try {
@@ -90,59 +92,25 @@ Keep responses concise and conversational. Use markdown lightly.`;
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
         body: JSON.stringify({
           model,
-          stream: true,
+          stream: false,
           messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)],
           max_tokens: 1024,
           temperature: 0.7,
         }),
       });
-      if (!res.ok || !res.body) continue;
-      aiRes = res; modelName = model; break;
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (!text) continue;
+
+      const calendarEvent = extractCalendarEvent(text);
+      return new Response(JSON.stringify({ text, model, calendarEvent: calendarEvent || null }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' }
+      });
     } catch { continue; }
   }
 
-  if (!aiRes) {
-    return new Response(JSON.stringify({ error: 'All AI providers failed' }), {
-      status: 503, headers: { ...CORS, 'Content-Type': 'application/json' }
-    });
-  }
-
-  // Transform Groq/OpenRouter SSE → Aki SSE format
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let fullText = '';
-
-  const stream = new TransformStream({
-    transform(chunk, controller) {
-      buffer += decoder.decode(chunk, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim();
-        if (raw === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(raw);
-          const token = parsed.choices?.[0]?.delta?.content;
-          if (token) {
-            fullText += token;
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'chunk', text: token })}\n\n`));
-          }
-        } catch {}
-      }
-    },
-    flush(controller) {
-      const calendarEvent = extractCalendarEvent(fullText);
-      controller.enqueue(encoder.encode(
-        `data: ${JSON.stringify({ type: 'done', model: modelName, calendarEvent: calendarEvent || null })}\n\n`
-      ));
-    }
-  });
-
-  aiRes.body.pipeThrough(stream);
-
-  return new Response(stream.readable, {
-    headers: { ...CORS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  return new Response(JSON.stringify({ error: 'All AI providers failed' }), {
+    status: 503, headers: { ...CORS, 'Content-Type': 'application/json' }
   });
 }
