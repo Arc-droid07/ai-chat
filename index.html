@@ -430,15 +430,26 @@ let currentController=null;
 
 // ── TAB FREEZE FIX ──
 function resetBusy(){
-  if(currentController){currentController.abort();currentController=null;}
+  // Only reset UI — never abort mid-stream
+  currentController=null;
   const btn=document.getElementById('sendbtn');
   if(btn)btn.disabled=false;
   setStatus('ready');
   document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
 }
+// Only reset UI on tab switch — don't abort fetch
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&!busy)resetBusy();
+  if(!document.hidden){
+    const btn=document.getElementById('sendbtn');
+    if(btn&&btn.disabled&&!currentController){
+      btn.disabled=false;
+      setStatus('ready');
+      document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
+    }
+  }
 });
+
+
 
 // ── CALENDAR ──
 function connectCalendar(){
@@ -744,7 +755,7 @@ async function send(){
   if(notifMessages?.length>0)notifContext='\n\nPending messages from friends:\n'+notifMessages.map(n=>`- From a friend: "${n.content}" (type: ${n.type})`).join('\n');
 
   currentController=new AbortController();
-  const timeout=setTimeout(()=>currentController?.abort(),30000);
+  const timeout=setTimeout(()=>currentController?.abort(),60000);
 
   // ── Streaming send ──────────────────────────────────────────────────────────
   try{
@@ -759,12 +770,11 @@ async function send(){
       signal:currentController.signal
     });
 
-   if(!res.ok){
-  const errText=await res.text().catch(()=>'');
-  let errMsg='Something went wrong';
-  try{ errMsg=JSON.parse(errText).error||errMsg; }catch{}
-  throw new Error(errMsg);
-}
+    if(!res.ok){
+      const errText=await res.text().catch(()=>'');let err={};try{err=JSON.parse(errText);}catch{}
+      throw new Error(err.error||'Something went wrong');
+    }
+
     // Remove thinking dots, create streaming bubble
     thinkEl.remove();
     setStatus('thinking');
