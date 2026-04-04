@@ -436,8 +436,9 @@ function resetBusy(){
   setStatus('ready');
   document.querySelectorAll('.thinking-wrap').forEach(el=>el.remove());
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)resetBusy();});
-window.addEventListener('focus',resetBusy);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&!busy)resetBusy();
+});
 
 // ── CALENDAR ──
 function connectCalendar(){
